@@ -1,0 +1,904 @@
+Digital Pendulum System
+INSTALLATION AND COMMISSIONING
+33-005-0M5
+MATLAB 5 Version
+Feedback
+Feedback Instruments Ltd, Park Road, Crowborough, E. Sussex, TN6 2QR, UK.
+Telephone: +44 (0) 1892 653322,      Fax: +44 (0) 1892 663719.
+email: feedback@fdbk.co.uk     website: http://www.fbk.com
+Manual: 33-005-0M5 Ed03 062000
+Printed in England by Fl Ltd, Crowborough
+Feedback Part No. 1160–330050M5
+Notes
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+PREFACE
+33-005-0M5  
+i
+THE HEALTH AND SAFETY AT WORK ACT 1974
+We are required under the Health and Safety at Work Act 1974, to make available to users of this equipment certain information
+regarding its safe use.
+The equipment, when used in normal or prescribed applications within the parameters set for its mechanical and electrical performance,
+should not cause any danger or hazard to health or safety if normal engineering practices are observed and they are used in
+accordance with the instructions supplied.
+If, in specific cases, circumstances exist in which a potential hazard may be brought about by careless or improper use, these will be
+pointed out and the necessary precautions emphasised.
+While we provide the fullest possible user information relating to the proper use of this equipment, if there is any doubt whatsoever
+about any aspect, the user should contact the Product Safety Officer at Feedback Instruments Limited, Crowborough.
+This equipment should not be used by inexperienced users unless they are under supervision.
+We are required by European Directives to indicate on our equipment panels certain areas and warnings that require attention by the
+user. These have been indicated in the specified way by yellow labels with black printing, the meaning of any labels that may be fixed to
+the instrument are shown below:
+CAUTION -
+RISK OF
+DANGER
+CAUTION -
+RISK OF
+ELECTRIC SHOCK
+CAUTION -
+ELECTROSTATIC
+SENSITIVE DEVICE
+Refer to accompanying documents
+PRODUCT IMPROVEMENTS
+We maintain a policy of continuous product improvement by incorporating the latest developments and components into our equipment,
+even up to the time of dispatch.
+All major changes are incorporated into up-dated editions of our manuals and this manual was believed to be correct at the time of
+printing. However, some product changes which do not affect the instructional capability of the equipment, may not be included until it is
+necessary to incorporate other significant changes.
+COMPONENT REPLACEMENT
+Where components are of a ‘Safety Critical’ nature, i.e. all components involved with the supply or carrying of voltages at supply
+potential or higher, these must be replaced with components of equal international safety approval in order to maintain full equipment
+safety.
+In order to maintain compliance with international directives, all replacement components should be identical to those originally
+supplied.
+Any component may be ordered direct from Feedback or its agents by quoting the following information:
+1.
+Equipment type
+3.
+Component reference
+2.
+Component value
+4.
+Equipment serial number
+Components can often be replaced by alternatives available locally, however we cannot therefore guarantee continued performance
+either to published specification or compliance with international standards.
+DIGITAL PENDULUM SYSTEM
+PREFACE
+INSTALLATION AND COMMISSIONING
+ii
+33-005-0M5
+      DECLARATION CONCERNING ELECTROMAGNETIC COMPATIBILITY
+Should this equipment be used outside the classroom, laboratory study area or similar such place for which it is designed and sold then
+Feedback Instruments Ltd hereby states that conformity with the protection requirements of the European Community Electromagnetic
+Compatibility Directive (89/336/EEC) may be invalidated and could lead to prosecution.
+This equipment, when operated in accordance with the supplied documentation, does not cause electromagnetic disturbance outside its
+immediate electromagnetic environment.
+COPYRIGHT NOTICE
+© Feedback Instruments Limited
+All rights reserved. No part of this publication may be reproduced, stored in a retrieval system, or transmitted, in any form or by any
+means, electronic, mechanical, photocopying, recording or otherwise, without the prior permission of Feedback Instruments Limited.
+ACKNOWLEDGEMENTS
+Feedback Instruments Ltd acknowledge all trademarks.
+IBM, IBM - PC are registered trademarks of International Business Machines.
+MICROSOFT,  WINDOWS 95, WINDOWS 3.1 are registered trademarks of Microsoft Corporation.
+MATLAB is a registered trademark of Mathworks Inc.
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+CONTENTS
+33-005-0M5
+TOC 1
+TABLE OF CONTENTS
+1
+INTRODUCTION
+1-1
+1.1
+Required Equipment
+1-1
+1.2
+Feedback Ltd supplied items
+1-2
+2
+MECHANICAL ASSEMBLY
+2-1
+3
+SWITCH AND JUMPER SETTINGS FOR THE PCL- 812 CARD
+3-1
+3.1
+Switch settings - 16 bit board
+3-2
+3.2
+Jumper Settings
+3-3
+3.3
+Switch SW1 settings for 8 bit full length PCL - 812 board
+3-4
+4
+INSTALLATION OF THE PCL-812 CARD AND CABLES
+4-1
+5
+INSTALLATION AND TESTING OF THE RT-DAC CARD
+5-1
+6
+RTK AND MATLAB SOFTWARE INSTALLATION
+6-1
+7
+COMMISSIONING AND TEST SOFTWARE
+7-1
+7.1
+Starting the software
+7-1
+7.2
+Software Operation
+7-1
+7.3
+Description of screen controls and displays.
+7-4
+8
+TEST SEQUENCE
+8-1
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+CONTENTS
+TOC 2
+33-005-0M5
+Notes
+CHAPTER 1
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+INTRODUCTION
+33-005-0M5
+1-1
+1 INTRODUCTION
+This manual contains a description of the components of the Digital Pendulum System,
+assembly instructions and test procedures. It is intended to provide the means for
+validating the correct operation of the system, before proceeding to more advanced
+functions and demonstrations using control software with MATLAB / SIMULINK.
+The procedures described in this section of the Pendulum manual will ensure correct:
+• Assembly of the system
+• Switch and Jumper settings of the PCL-812 interface card
+• Cable connections between the PC and the Pendulum
+1.1 REQUIRED EQUIPMENT
+The following software and hardware equipment together with documentation are required
+to use the system.
+• IBM Compatible 486DX or Pentium PC with minimum configuration:
+ 16 Mb of memory, Math co-processor (included in 486 or Pentium
+processor)
+CD-ROM
+ Hard Disk with 100 Mb available after MATLAB installed
+ SVGA screen and mouse.
+DOS version 5 or later, Windows 95 or Windows NT
+• MATLAB Version 5.3 with SIMULINK, Control Systems and Signal Processing
+toolboxes plus Fuzzy Logic NCD.
+• Advantech PCL-812PG Enhanced Multi-Lab Card or the equivalent such as
+RT-DAC to install in the PC with 1 x 20 way and 1 x 40 way ribbon cables
+• Feedback- Pendulum System consisting of Digital Pendulum Mechanical
+Unit(33-200) and Digital Pendulum Controller Unit(33-201).
+• 
+CD-ROM (33-930) with Feedback’s Pendulum Control Software,
+• 
+Set of 6 manuals:
+33-000-0 - Feedback MATLAB Based Control Products Software Installation
+Guide
+33-005-0M5 - Pendulum System - 
+Installation and Commissioning
+33-005-1M5 - Pendulum System -
+Getting Started
+33-005-2M5 - Pendulum System - 
+Reference Manual
+33-005-3M5 - Pendulum System -
+External Interface
+33-005-4M5 - Pendulum System -
+Teaching Manual 1
+33-005-5M5 - Pendulum System -
+Teaching Manual 2
+CHAPTER 1
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+INTRODUCTION
+33-005-0M5
+1-2
+1.2 FEEDBACK LTD SUPPLIED ITEMS
+The following items are supplied by Feedback under  the following product codes
+33-200
+Digital Pendulum Mechanical Unit
+33-201
+Digital Pendulum Controller
+33-930
+Digital Pendulum Control  System Software pack including 
+Advantech card
+33-930I
+Digital Pendulum Control  System Software pack excluding 
+Advantech card
+33-005
+Contains 33-200 , 33-201 , 33-930 (Composite product)
+33-005I
+Contains 33-200 , 33-201 , 33-930I (Composite product)
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+MECHANICAL ASSEMBLY
+33-005-0M5
+2-1
+2 MECHANICAL ASSEMBLY
+Carefully unpack the items, and remove all packaging and securing material. You should
+have the following items:
+1) 
+Track for the cart to move on, with motor attached, and toothed belt
+2) 
+Pendulum  cart with mounting points for the two pendulum arms and attached
+ribbon cable
+3) 
+Two pendulum arms with weights attached
+4) 
+Two legs each with two adjustable feet, with mounting plates for securing to the
+track
+5) 
+1 x 2mm and 1 x 6mm Allen keys
+Refer to Fig 2.1 below
+Place the Digital Pendulum Mechanical Unit on a level surface with the motor on the left
+viewed from the front and allow sufficient room for the controller box , PC and mouse.
+Ensure that the pendulum is clear of any obstructions when executing a complete
+revolution, and is not able to make contact with any observers.
+Using the 6mm Allen key provided, remove the 8 bolts attached to the track at the leg
+mounting positions, and secure the legs to the track with these bolts.
+Fig 2.1: The pendulum system assembled
+Motor Mounting
+Plate
+Belt tension
+adjustment bolts
+Belt
+Adjustable feet
+Mounting
+points for legs
+Pendulum arms
+Centre
+Datum
+Sprocket
+wheel
+Feedback
+Arm fixing screw
+Ribbon Cable
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+MECHANICAL ASSEMBLY
+33-005-0M5
+2-2
+Use the adjustable feet (it is only necessary to adjust one of the four) to ensure that the
+pendulum system is stable on the surface. Slacken off the adjustable foot locking nut and
+rotate the foot until the system is perfectly stable. Tighten the locking nut.
+Insert one of the pendulum arms into one of the two mounting positions on the cart from
+the bottom and loosely tighten the securing screw on to the flat part of the pendulum arm
+with the 2mm Allen key provided. Push the arm upwards until the end of the flat is
+reached and tighten the securing screw. Repeat for the other pendulum arm on the other
+side of the cart
+Ensure the pendulum cart is free to  move on the track and that the drive belt is attached
+to the cart at both ends and goes over the sprocket wheels at each end of the track. If the
+belt is slack, use the 6mm Allen key to slacken off the belt tension adjustment bolts and
+move the motor mounting plate until the belt is taut. Tighten the adjustment bolts.
+Finally, clip the ribbon cable to the pendulum left hand leg using the attached clips.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD SETTINGS
+33-005-0M5
+3-1
+3 SWITCH AND JUMPER SETTINGS FOR THE PCL- 812 CARD
+The PCL-812 contains components which can be damaged by static
+electricity. Before removing the PCL-812 board from its conductive
+packaging, touch your hand on a grounded metal object such as the case of
+your PC. Avoid touching the components on the board or the plated edge
+connectors.
+Before installing the PCL-812PG interface card into your computer make sure that the
+switches and jumpers shown in Figure 3.1 are set correctly, as detailed in this section.
+Figure 3.1:  16 bit PCL-812PG Interface Card - Switch and Jumper positions
+Note:  The board shown above is a 16 bit short board. Some users may have
+the 8 bit full length PCL- 812 board for which the SW1 switch settings are
+different. If you have this board refer to the settings in the following section
+for the 8 bit board.
+Other settings and cable connections are the same for both boards.
+JP5
+JP2
+JP1
+JP9
+JP8
+JP7
+JP6
+JP4
+JP3
+Digital Out
+Digital In
+Analogue I/O CN1
+Analogue I/O CN2
+1 2
+5
+3
+4
+6
+7 8
+SW1
+ON
+
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD SETTINGS
+33-005-0M5
+3-2
+3.1 SWITCH SETTINGS - 16 BIT BOARD
+Switch SW1 controls the base address for I/O transfer (switches 1-6), and the  CPU wait
+states (Switches 7-8). They should be set as follows.
+( Note that the Pendulum software always refers to the decimal settings, whereas the
+manual on the PCL-812 board refers to hexadecimal settings. For convenience, both
+decimal and hex addresses are shown in the table below ).
+SW1 Base Address Selection
+I/O Address Range (hex
+and decimal)
+SW1 Switch position
+1
+2
+3
+4
+5
+6
+200-20F  (512-527 Dec)
+OFF
+ON
+ON
+ON
+ON
+ON
+210-21F  (528-543 Dec)
+OFF
+ON
+ON
+ON
+ON
+OFF
+220-22F  (544-559 Dec) *
+OFF
+ON
+ON
+ON
+OFF
+ON
+230-23F  (560-575 Dec)
+OFF
+ON
+ON
+ON
+OFF
+OFF
+300-30F  (768-783 Dec)
+OFF
+OFF
+ON
+ON
+ON
+ON
+3F0-3FF  (1008-1023 Dec)
+OFF
+OFF
+OFF
+OFF
+OFF
+OFF
+* Factory default setting
+Note that some video cards or floppy disk drives use the higher base
+addresses such as 1008 (Hex 3F0), and should be avoided if possible.
+SW1 Wait State Selection
+SW1 Switch Settings
+Time Delay
+7
+8
+0 *
+ON
+ON
+2
+OFF
+ON
+4
+ON
+OFF
+6
+OFF
+OFF
+ * Factory default setting
+
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD SETTINGS
+33-005-0M5
+3-3
+3.2 JUMPER SETTINGS
+The Jumpers on the PCL-812 board should be set in the positions indicated below.
+JP1 - Trigger Source Selection
+JP1
+INT
+O
+TRG
+O
+EXT
+O
+JP2 - Counter Input Clock Selection
+JP2
+INT
+O
+CLK
+O
+EXT
+O
+JP3, JP4 - D/A Reference Selection
+JP3
+O
+O
+O
+D/A1
+JP4
+O
+O
+O
+D/A2
+INT
+VREF
+EXT
+JP5 - IRQ Level Selection
+2
+3
+4
+5
+6
+7
+X
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+JP5
+JP6, JP7 - DMA Channel Selection
+1
+3
+X
+1
+3
+X
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+O
+JP6
+JP7
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD SETTINGS
+33-005-0M5
+3-4
+JP8, JP9 - D/A Internal Reference, A/D Maximum Input Voltage Selection
+10
+5
+JP8
+O
+O
+O
+JP9
+O
+O
+O
+Depending on the specification and configuration of your PC you may need to change the
+Base Address and Wait State settings.
+None of the other settings need to be changed.
+3.3 SWITCH SW1 SETTINGS FOR 8 BIT FULL LENGTH PCL - 812
+BOARD
+I/O Address Range (hex
+and decimal)
+SW1 Switch position
+1
+2
+3
+4
+5
+6
+200-20F  (512-527 Dec)
+ON
+ON
+ON
+ON
+ON
+X
+210-21F  (528-543 Dec)
+ON
+ON
+ON
+ON
+OFF
+X
+220-22F  (544-559 Dec) *
+ON
+ON
+ON
+OFF
+ON
+X
+230-23F  (560-575 Dec)
+ON
+ON
+ON
+OFF
+OFF
+X
+300-30F  (768-783 Dec)
+OFF
+ON
+ON
+ON
+ON
+X
+3F0-3FF  (1008-1023 Dec)
+OFF
+OFF
+OFF
+OFF
+OFF
+X
+Note: An “X” in the table above means that this switch is not used.
+
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD INSTALLATION
+33-005-0M5
+4-1
+4 INSTALLATION OF THE PCL-812 CARD AND CABLES
+Figure 4.1: PCL- 812 Interface Card Ribbon Cable connections
+Two slots are required at the rear of the PC - one for the two 20 way analogue port
+sockets, and one for the 40 way socket at the end of the wide ribbon cable for the digital
+ports. Use screws to secure the card and ribbon socket plates to the casing of the PC.
+Carefully install the interface card in a spare slot on the PC motherboard (or in a slot on
+the passive backplane if  your PC has this type of architecture - common with some 19
+inch rack mounted PC’s). If in any doubt as to the correct procedure consult the
+documentation supplied with the PC.
+Turn OFF and disconnect the mains power supply
+BEFORE opening the computer
+Before opening the computer it is important to ensure that the computer is switched off
+and that the mains power supply is not connected.
+Once you have opened the computer, check to see if there are any other cards installed,
+for example a network or sound card. It is important to determine the addresses of any
+such cards as your Pendulum System will not function correctly if there is another card
+using all, or part of, the address space assigned to the PCL-812PG interface card.
+1 2
+5
+3
+4
+6
+7 8
+JP5
+JP2
+JP1
+JP9
+JP8
+JP7
+JP6
+JP4
+JP3
+Digital Out
+Digital In
+Analogue I/O CN1
+Analogue I/O CN2
+SW1
+Wide ribbon cable
+1 narrow
+ribbon cable
+Red band on
+cable on top
+ON
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD INSTALLATION
+33-005-0M5
+4-2
+Following the installation of the interface card into your PC, you are now ready to close
+the PC case and connect the ribbon cables to the 33-201 Digital Pendulum Controller.
+Refer to Figures 4.2 and 4.3 below for details.
+Fig. 4.2: Front view of 33-201 controller
+Fig. 4.3: Rear view of 33-201 controller
+Connectors and
+The sockets for the ribbon cables are on the back of 33-201 unit.
+Switches 
+The 20-way connector (No. 2) connects to CN2 of the PC interface 
+card. This is the lower connector on the interface card (i.e. closest to 
+the motherboard of the PC). The 40 way (No. 3) connector on the
+33-201 connects to the 40 way connector on the PC interface card.
+The smallest connector on the 33-201 (No. 1) connects to the ribbon
+cable from the mechanical unit encoders.
+Voltage selector
+Set the voltage selector for the correct voltage in your area.
+Mains power
+Connect the mains power cable to the 33-201 and plug in to your 
+mains supply.
+Mains power
+input
+Power socket to
+motor
+Voltage selector
+Ribbon cable
+from
+mechanical unit
+encoders
+Wide ribbon
+cable (40 way)
+from PC
+interface card
+Narrow ribbon
+cable (20 way)
+from PC
+interface card.
+1
+2
+3
+Start
+GREEN
+Controller
+ON/OFF switch
+Stop
+RED
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD INSTALLATION
+33-005-0M5
+4-3
+Switch on 
+Switch on the mains supply to the 33-201 and your PC. Switch the 
+33-201 illuminated power switch on. If this switch does not light up 
+check the mains power cable and mains power supply.
+Do not at this stage press the round green start button.
+It is important that the area of operation is free of obstruction and that users
+and observers are warned to keep clear of the immediate vicinity of the
+system for safety reasons.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+PCL- 812 CARD INSTALLATION
+33-005-0M5
+4-4
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+RT-DAC CARD INSTALLATION
+33-005-0M5
+5-1
+5 
+INSTALLATION AND TESTING OF THE RT-DAC CARD
+See: the RT-DAC multi I/O board User’s manual for installation, and the RT-DAC testing
+software for testing the card.
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING 
+RT-DAC CARD INSTALLATION
+33-005-0M5
+5-2
+Notes
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+RTK AND MATLAB
+INSTALLATION AND COMMISSIONING 
+SOFTWARE INSTALLATION
+33-005-0M5
+6-1
+6 RTK AND MATLAB SOFTWARE INSTALLATION
+See the Installation Guide 33-000M5 : Feedback software installation programs for digital
+control equipment working with MATLAB 5.3 under Windows environment for details.
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+RTK AND MATLAB
+INSTALLATION AND COMMISSIONING 
+SOFTWARE INSTALLATION
+33-005-0M5
+6-2
+Notes
+CHAPTER 7
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING COMMISSIONING AND TEST SOFTWARE
+33-005-0M5
+7-1
+7 COMMISSIONING AND TEST SOFTWARE
+7.1 STARTING THE SOFTWARE
+Commissioning/Test software is supplied to check the operation of the Pendulum System,
+before using the MATLAB driven control software.
+If you use the RT-DAC card please remember to use the RT-DAC Testing Software to
+check the data flow between a PC and the Pendulum System.
+Windows 95 installation
+Find the Pendulum Commissioning /Test software file on CD-ROM supplied:
+From  the Windows 95 Start menu click on RUN and use the browse feature to
+locate  the PENDTST.EXE program on CD-ROM drive:
+Windows 3.1 installation(Ignore this if you are using Matlab version 5.1 or above)
+Insert the Pendulum Commissioning / Test software disk in drive A:
+Start File Manager and click on the PENDTST.EXE program on drive A:. Click on
+RUN from the File manager File menu.
+DOS installation
+Insert the Pendulum Commissioning / Test software disk in drive A: Type in the
+following DOS commands.
+>A:
+>PENDTST
+7.2 SOFTWARE OPERATION
+After starting the Pendulum commissioning/test software you will see the following screen
+presented.
+Fig 5.1. Start screen
+CHAPTER 7
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING COMMISSIONING AND TEST SOFTWARE
+33-005-0M5
+7-2
+• Click OK.  The following screen appears, only if the card is not found at the factory
+default Base address of 544.
+Fig. 5.2: PCL-812 Base address Selection
+• Use the mouse to select the base address of the PCL-812 interface card which has
+been set and checked in accordance with the procedure detailed in Chapter 3 of this
+manual.
+If you do not know the Base Address, clicking on Locate will identify and set it
+automatically. ( Note that Locate can only be used if there is only one PCL-812 board
+installed in your PC ).
+• Having selected the correct base Address, click on Close.
+The following dialogue box appears.
+• Remove the drive belt from the motor sprocket wheel.
+• View the pendulum so that the motor is on the left side of the rail and the Feedback
+logo on the front.
+• Turn on the power to the pendulum control unit and click OK.
+The test of the motor must be done with the drive belt removed from the
+motor sprocket wheel to avoid the cart hitting the end stops.
+
+CHAPTER 7
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING COMMISSIONING AND TEST SOFTWARE
+33-005-0M5
+7-3
+The following screen appears.
+   
+   Fig. 5.3: Main screen of PENDULUM Commissioning and Test Software .
+CHAPTER 7
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING COMMISSIONING AND TEST SOFTWARE
+33-005-0M5
+7-4
+7.3 DESCRIPTION OF SCREEN CONTROLS AND DISPLAYS.
+This screen allows you to interact with the PENDULUM System, change the speed or
+reverse direction of the motor by changing the applied voltage, and display the outputs
+from the two rotary encoders, which measure the angular displacement of the pendulum
+and the linear displacement of the cart.
+Clicking this button applies the maximum voltage to the
+motor to rotate it in a clockwise direction, from the
+viewpoint specified.
+Clicking this button applies the maximum voltage to the
+motor to rotate it in a counter clockwise direction, from the
+viewpoint specified.
+Clicking this button will stop the motor.
+Changes the base address of the PCL-812 board. The
+base address currently used is shown under this button in
+decimal format.
+Click on the reset encoders button sets the rotary
+encoders to zero. Subsequent encoder outputs are then
+angular deviations relative to the new set positions. The
+outputs for the motor  and cart encoders, which measure
+the linear cart displacement and the pendulum angular
+displacement, are shown in binary format at the bottom of
+the screen
+Exits the program.
+Motor speed/direction
+Dragging the slider bar to the left or right allows the motor
+speed  to be varied in a clockwise or counter clockwise
+direction, in a number of discrete steps. When the slider
+bar is in the centre of the slider the motor is stopped, with
+an output voltage of 2.5 ± 100mv.
+HOT KEYS
+Note that as an alternative to using the mouse, the functions displayed on
+the screen can be activated by typing ALT + the highlighted letter displayed
+in reverse video on the screen. Thus, for example, to reset the encoders,
+press ALT + R
+Max cw
+max Ccw
+Stop motor
+Change address
+X
+Reset encoders
+Quit Program
+
+CHAPTER 8
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+TEST SEQUENCE
+33-005-0M5
+8-1
+8 TEST SEQUENCE
+When you have complete the system  installation, execute the following test sequence to
+ensure that the system is functioning properly.
+• Start PENDTST commissioning  software, and check that the base address is correctly
+set.
+• Switch on the mains power and the switch on the front of the 33-201 pendulum control
+unit.
+• Click on Stop motor. Start the sequence in the table below.
+ 
+ACTION
+RESULT
+1. Disconnect the drive belt
+from the motor sprocket.
+Place the cart in the centre
+of the rail, lining up the
+positioning marks on the cart
+and the rail.
+Click Reset Encoders
+Slowly rotate the pendulum
+in a clockwise direction (as
+viewed from the specified
+viewpoint).
+Observe the change in the cart encoder
+display in the  bottom part of the screen. The
+encoder output is shown as a number.
+2. Move the cart as far to the
+left as possible.
+Click Reset Encoders.
+Move the cart slowly as far
+to the right as possible.
+Move the cart slowly as far
+to the left as possible.
+Observe the change in the motor encoder
+display in the bottom part of the screen. The
+encoder output is shown as a number. The
+encoder output should change from around
+zero to a value between 13000 and 14000
+The motor encoder output should return to a
+value close to zero.
+CHAPTER 8
+DIGITAL PENDULUM SYSTEM
+INSTALLATION AND COMMISSIONING
+TEST SEQUENCE
+33-005-0M5
+8-2
+ACTION
+RESULT
+3. Click the Stop motor button
+Drag the Motor control slider
+at the top of the screen a
+small amount to the right.
+Repeat the above, dragging
+the Motor control slider the
+maximum amount to the
+right.
+Establish that the motor is turning clockwise
+from the specified viewpoint.
+The motor is turning clockwise at its
+maximum rate.
+4. Click the Stop motor button
+Drag the Motor control slider
+at the top of the screen a
+small amount to the left.
+Repeat the above, dragging
+the Motor control slider the
+maximum amount to the left.
+Establish that the motor is turning counter
+clockwise from the specified viewpoint.
+The motor is turning counter clockwise at its
+maximum rate.
+Always be prepared to press the round red STOP button to cut
+the power to the pendulum if the system exhibits erratic or
+unexpected behaviour.

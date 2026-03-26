@@ -1,0 +1,123 @@
+// ============================================================================
+// TESTE DE DIAGNÓSTICO — Motor BTS7960 + Encoders
+// Verifica: direção de cada canal PWM, leitura dos encoders, zona morta
+// ============================================================================
+// PROCEDIMENTO:
+//   1. Carrinho no MEIO do trilho, pêndulo livre
+//   2. Upload e abra o Monitor Serial (115200)
+//   3. Observe no serial qual canal move para qual direção
+//   4. Anote e informe os resultados
+// ============================================================================
+
+#include <Arduino.h>
+#include <ESP32Encoder.h>
+
+// Motor (Ponte H BTS7960)
+#define PIN_RPWM 15
+#define PIN_LPWM 4
+#define PIN_REN  27
+#define PIN_LEN  14
+
+// Encoders
+#define ENC_PEND_A 34
+#define ENC_PEND_B 35
+#define ENC_CART_A 33
+#define ENC_CART_B 32
+
+ESP32Encoder encCart;
+ESP32Encoder encPend;
+
+const float K_POS = 0.0000215;
+const float K_ANG = 0.0015;
+
+void pararMotor() {
+    analogWrite(PIN_RPWM, 0);
+    analogWrite(PIN_LPWM, 0);
+}
+
+void setup() {
+    Serial.begin(115200);
+
+    // PWM a zero primeiro
+    pinMode(PIN_RPWM, OUTPUT);
+    pinMode(PIN_LPWM, OUTPUT);
+    analogWrite(PIN_RPWM, 0);
+    analogWrite(PIN_LPWM, 0);
+
+    // Habilita ponte H
+    pinMode(PIN_REN, OUTPUT);
+    pinMode(PIN_LEN, OUTPUT);
+    digitalWrite(PIN_REN, HIGH);
+    digitalWrite(PIN_LEN, HIGH);
+
+    // Encoders
+    ESP32Encoder::useInternalWeakPullResistors = UP;
+    encCart.attachFullQuad(ENC_CART_A, ENC_CART_B);
+    encPend.attachFullQuad(ENC_PEND_A, ENC_PEND_B);
+    encCart.clearCount();
+    encPend.clearCount();
+
+    Serial.println("=== TESTE DE MOTOR E ENCODERS ===");
+    Serial.println("Carrinho no MEIO, pendulo livre.");
+    Serial.println("Iniciando em 3 segundos...\n");
+    delay(3000);
+}
+
+void loop() {
+    long cart0, cart1, pend0, pend1;
+    int pwm_teste = 120; // ~47% duty
+
+    // ---- TESTE 1: RPWM (pino 15) ----
+    Serial.println(">>> TESTE 1: Acionando RPWM (pino 15), PWM=120");
+    cart0 = encCart.getCount();
+    pend0 = encPend.getCount();
+    
+    analogWrite(PIN_RPWM, pwm_teste);
+    analogWrite(PIN_LPWM, 0);
+    delay(1000);
+    pararMotor();
+    
+    cart1 = encCart.getCount();
+    pend1 = encPend.getCount();
+    Serial.printf("  Cart: %ld -> %ld (delta=%ld, %.4f m)\n", cart0, cart1, cart1-cart0, (cart1-cart0)*K_POS);
+    Serial.printf("  Pend: %ld -> %ld (delta=%ld)\n\n", pend0, pend1, pend1-pend0);
+    delay(2000); // pausa para o carrinho parar
+
+    // ---- TESTE 2: LPWM (pino 4) ----
+    Serial.println(">>> TESTE 2: Acionando LPWM (pino 4), PWM=120");
+    cart0 = encCart.getCount();
+    pend0 = encPend.getCount();
+    
+    analogWrite(PIN_RPWM, 0);
+    analogWrite(PIN_LPWM, pwm_teste);
+    delay(1000);
+    pararMotor();
+    
+    cart1 = encCart.getCount();
+    pend1 = encPend.getCount();
+    Serial.printf("  Cart: %ld -> %ld (delta=%ld, %.4f m)\n", cart0, cart1, cart1-cart0, (cart1-cart0)*K_POS);
+    Serial.printf("  Pend: %ld -> %ld (delta=%ld)\n\n", pend0, pend1, pend1-pend0);
+    delay(2000);
+
+    // ---- TESTE 3: Zona morta ----
+    Serial.println(">>> TESTE 3: Zona morta — subindo PWM de 20 a 80");
+    for (int pwm = 20; pwm <= 80; pwm += 10) {
+        cart0 = encCart.getCount();
+        analogWrite(PIN_RPWM, pwm);
+        analogWrite(PIN_LPWM, 0);
+        delay(500);
+        pararMotor();
+        cart1 = encCart.getCount();
+        Serial.printf("  PWM=%d -> delta_cart=%ld %s\n", pwm, cart1-cart0, 
+                       (cart1-cart0 != 0) ? "MOVEU" : "parado");
+        delay(500);
+    }
+
+    Serial.println("\n=== TESTES CONCLUIDOS ===");
+    Serial.println("Informe: qual TESTE (1 ou 2) moveu para DIREITA e qual para ESQUERDA?");
+    Serial.println("E a partir de qual PWM o carrinho comecou a se mover?");
+    Serial.println("\nReinicie para repetir.\n");
+    
+    pararMotor();
+    while (1); // para aqui
+}

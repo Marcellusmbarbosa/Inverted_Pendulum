@@ -1,0 +1,325 @@
+// ============================================================================
+// Projeto Sarisa — Pêndulo Invertido
+// Hardware: ESP32 WROOM DevKit 30 pinos + BTS7960 + 2 Encoders Incrementais
+// Controle: Swing-Up (energia) → LQR + Integrador + Observador (Luenberger)
+// Ref: Feedback Instruments Digital Pendulum 33-005-1M5
+// ============================================================================
+//
+// Convenção de ângulo: x2 = 0 → pêndulo para CIMA (equilíbrio instável)
+//                      x2 = ±PI → pêndulo para BAIXO (equilíbrio estável)
+//
+// Vetor de estados: x = [posição_carrinho, ângulo_pêndulo, vel_carrinho, vel_angular]
+//
+// Modo de operação:
+//   1. Posicione o pêndulo para BAIXO e o carrinho no MEIO do trilho
+//   2. O sistema inicia no modo SWING-UP (controle baseado em energia)
+//   3. Quando o pêndulo estiver próximo do topo, transiciona para LQR
+//   4. Se o LQR perder o equilíbrio, retorna automaticamente ao SWING-UP
+// ============================================================================
+
+#include <Arduino.h>
+#include <BasicLinearAlgebra.h>
+#include <ESP32Encoder.h>
+
+using namespace BLA;
+
+// ========================== Pinagem do Hardware =============================
+
+// Motor (Ponte H BTS7960)
+#define PIN_RPWM 15
+#define PIN_LPWM 4
+#define PIN_REN  27
+#define PIN_LEN  14
+
+// Encoder do Pêndulo
+#define ENC_PEND_A 34
+#define ENC_PEND_B 35
+
+// Encoder do Carrinho
+#define ENC_CART_A 33
+#define ENC_CART_B 32
+
+// ======================== Objetos de Hardware ===============================
+
+ESP32Encoder encCart;
+ESP32Encoder encPend;
+
+// =============== Parâmetros Físicos (Manual de Referência) ==================
+// Fonte: Feedback Instruments 33-005-1M5 — Reference & Teaching Manuals
+const float MC         = 1.120;    // Massa do carrinho [kg]
+const float MP         = 0.11;     // Massa do pêndulo (pole 0.025 + peso 0.095) [kg]
+const float L_PEND_COM = 0.305;    // Distância eixo rotação → CM do pêndulo [m]
+const float I_PEND     = 0.0136;   // Momento de inércia do pêndulo no eixo [kg·m²]
+const float G_ACC      = 9.81;     // Gravidade [m/s²]
+
+// ===================== Constantes de Calibração =============================
+// K_POS e K_ANG calibrados empiricamente para os encoders deste hardware
+// (Manual Feedback: K_POS≈7.6e-5, K_ANG≈3.07e-3 para encoders de 2048 PPR)
+const float K_POS = 0.0000215;    // pulsos → metros
+const float K_ANG = 0.0015;       // pulsos → radianos
+const float Ts    = 0.01;         // Período de amostragem [s] (10 ms, 100 Hz)
+
+// ===================== Ajustes do Motor =====================================
+const float FATOR_INVERSAO = 1.0;  // Corrigido: era -1.0 (direção invertida)
+const int   PWM_MINIMO     = 50;   // Zona morta do PWM (ajustar entre 30–80)
+const float FORCA_MAX      = 17.0; // Força máxima do atuador [N] (Manual: 11.3–17.0)
+
+// ===================== Limites de Segurança =================================
+const float POSICAO_LIMITE     = 0.5;  // Limite do trilho [m] (Manual: ±0.5 m)
+const float ANGULO_LIMITE_LQR  = 0.5;  // LQR perde equilíbrio → volta ao swing-up [rad]
+const float ZONA_ESTABILIZACAO = 0.3;  // Zona de transição swing-up → LQR [rad] (~17°)
+const float VEL_ANG_TRANSICAO  = 3.0;  // Vel. angular máx. para aceitar transição [rad/s]
+
+// ===================== Parâmetros Swing-Up ==================================
+// Manual: controle bang-bang baseado em energia com centragem do carrinho
+const float FORCA_SWING  = 0.25;  // Fração da força máxima no swing-up (Manual: Umax=0.25)
+const float K_SWING      = 5.0;   // Ganho proporcional do erro de energia
+const float ALPHA_CENTRO  = 0.2;  // Ganho de centragem proporcional à posição
+const float BETA_CENTRO   = 0.1;  // Ganho de amortecimento proporcional à velocidade
+
+// ================ Matrizes e Ganhos do Controlador LQR =====================
+
+const float Kid = 0.0487; // Ganho do integrador discreto
+
+// Ganhos de realimentação (Kod)
+BLA::Matrix<1, 4> Kod = {-2.6643, 359.3386, -271.5031, 180.3730};
+
+// Matriz de dinâmica discreta (Ak)
+BLA::Matrix<4, 4> Ak = {
+    1.0000,  0.0000,  0.0100,  0.0000,
+    0.0,     1.0009, -0.0000,  0.0100,
+    0.0,     0.0034,  0.9996,  0.0000,
+    0.0,     0.1740, -0.0007,  1.0007
+};
+
+// Matriz de entrada discreta (Bk)
+BLA::Matrix<4, 1> Bk = {0.0000, 0.0001, 0.0083, 0.0143};
+
+// Ganho do observador de estados (Ld)
+BLA::Matrix<4, 2> Ld = {
+     1.7693, -0.0081,
+    -0.0122,  1.7718,
+    78.2319, -0.7117,
+    -1.1187, 78.6213
+};
+
+// Matriz de saída (Ck_obs)
+BLA::Matrix<2, 4> Ck_obs = {
+    1, 0, 0, 0,
+    0, 1, 0, 0
+};
+
+// ====================== Variáveis de Estado ================================
+
+BLA::Matrix<4, 1> x_hat = {0, 0, 0, 0}; // Estado estimado pelo observador
+float erro_integrado = 0;
+float u_forca = 0;
+
+// Modo de operação
+enum Modo { SWING_UP, LQR_ATIVO };
+Modo modo_atual = SWING_UP;
+
+// Variáveis auxiliares para estimação de velocidade (diferença finita)
+float angulo_anterior  = PI;  // Inicia em PI (pêndulo para baixo)
+float posicao_anterior = 0;
+int   cont_serial      = 0;   // Downsampling da saída serial
+
+// ======================== Funções Auxiliares ================================
+
+// Normaliza ângulo para o intervalo [-PI, +PI]
+float normalizarAngulo(float ang) {
+    ang = fmod(ang, 2.0f * PI);
+    if (ang > PI)  ang -= 2.0f * PI;
+    if (ang < -PI) ang += 2.0f * PI;
+    return ang;
+}
+
+// ======================== Função do Motor ==================================
+
+void acionarMotor(float forca_n) {
+    forca_n *= FATOR_INVERSAO;
+    forca_n = constrain(forca_n, -FORCA_MAX, FORCA_MAX);
+
+    int pwm_base  = (fabsf(forca_n) / FORCA_MAX) * (255 - PWM_MINIMO);
+    int pwm_final = (fabsf(forca_n) > 0.1f) ? pwm_base + PWM_MINIMO : 0;
+    pwm_final = min(pwm_final, 255);
+
+    if (forca_n >= 0) {
+        analogWrite(PIN_RPWM, pwm_final);
+        analogWrite(PIN_LPWM, 0);
+    } else {
+        analogWrite(PIN_RPWM, 0);
+        analogWrite(PIN_LPWM, pwm_final);
+    }
+}
+
+// ==================== Controlador Swing-Up =================================
+// Controle baseado em energia (Ref: Manual Teaching 1 & 2)
+//   E = 0.5·I·ω² + m·g·l·(cos θ − 1)
+//   E = 0 quando pêndulo em pé com velocidade zero (alvo)
+//   E < 0 quando pêndulo abaixo do alvo (precisa ganhar energia)
+// Direção do empurrão: sign(ω · cos θ) → acelera na direção que adiciona energia
+
+float controlSwingUp(float angulo, float vel_ang, float posicao, float vel_cart) {
+    // Energia normalizada (E=0 no equilíbrio em pé)
+    float E = 0.5f * I_PEND * vel_ang * vel_ang
+            + MP * G_ACC * L_PEND_COM * (cosf(angulo) - 1.0f);
+
+    // Fator de direção
+    float direcao = vel_ang * cosf(angulo);
+
+    float u;
+    if (fabsf(direcao) < 0.01f) {
+        // Pêndulo quase parado → pequeno impulso para iniciar oscilação
+        u = (posicao > 0) ? -0.5f * FORCA_SWING * FORCA_MAX
+                          :  0.5f * FORCA_SWING * FORCA_MAX;
+    } else {
+        // Controle proporcional ao erro de energia, saturado (soft landing)
+        float k = constrain(-K_SWING * E, -1.0f, 1.0f);
+        u = k * FORCA_SWING * FORCA_MAX * (direcao > 0 ? 1.0f : -1.0f);
+    }
+
+    // Centragem do carrinho (Manual: α·x1 + β·x3, evita bater nos limites)
+    u -= ALPHA_CENTRO * FORCA_MAX * posicao;
+    u -= BETA_CENTRO  * FORCA_MAX * vel_cart;
+
+    return constrain(u, -FORCA_MAX, FORCA_MAX);
+}
+
+// ============================== Setup ======================================
+
+void setup() {
+    Serial.begin(115200);
+
+    // PWM primeiro a LOW para garantir motor parado antes de habilitar a ponte H
+    pinMode(PIN_RPWM, OUTPUT);
+    pinMode(PIN_LPWM, OUTPUT);
+    analogWrite(PIN_RPWM, 0);
+    analogWrite(PIN_LPWM, 0);
+
+    // Agora habilita a ponte H
+    pinMode(PIN_REN, OUTPUT);
+    pinMode(PIN_LEN, OUTPUT);
+    digitalWrite(PIN_REN, HIGH);
+    digitalWrite(PIN_LEN, HIGH);
+
+    ESP32Encoder::useInternalWeakPullResistors = UP;
+    encCart.attachFullQuad(ENC_CART_A, ENC_CART_B);
+    encPend.attachFullQuad(ENC_PEND_A, ENC_PEND_B);
+
+    // === MODO TESTE LQR: segure o pêndulo para CIMA e carrinho no MEIO ===
+    Serial.println("=== MODO TESTE LQR ===");
+    Serial.println("Segure o pendulo para CIMA e carrinho no MEIO.");
+    Serial.println("Solte em 5 segundos...");
+    delay(5000);
+
+    // Zera ambos encoders: 0 = pêndulo em cima, 0 = carrinho no centro
+    encCart.clearCount();
+    encPend.clearCount();
+
+    modo_atual       = LQR_ATIVO;
+    angulo_anterior  = 0;
+    posicao_anterior = 0;
+    erro_integrado   = 0;
+    x_hat            = {0, 0, 0, 0};
+    cont_serial      = 0;
+
+    Serial.println("LQR ATIVO! Solte o pendulo AGORA.");
+}
+
+// =============================== Loop ======================================
+
+void loop() {
+    unsigned long tempo_inicio = micros();
+
+    // 1. Leitura dos sensores
+    float x1_m   = encCart.getCount() * K_POS;
+    float x2_raw = encPend.getCount() * K_ANG;
+    float x2_rad = normalizarAngulo(x2_raw);
+
+    // 2. Velocidades estimadas por diferença finita (swing-up usa estas;
+    //    LQR usa o observador de Luenberger para estimar velocidades)
+    float vel_cart = (x1_m - posicao_anterior) / Ts;
+    float vel_ang  = normalizarAngulo(x2_rad - angulo_anterior) / Ts;
+    posicao_anterior = x1_m;
+    angulo_anterior  = x2_rad;
+
+    // 3. Proteção de segurança — posição do carrinho (Manual: ±0.5 m)
+    if (fabsf(x1_m) > POSICAO_LIMITE) {
+        acionarMotor(0);
+        Serial.printf("FALHA: Pos=%.2fm (lim=+-%.2fm)\n", x1_m, POSICAO_LIMITE);
+        while (1);
+    }
+
+    // 4. Máquina de estados
+    switch (modo_atual) {
+
+    // ---------- SWING-UP: controle baseado em energia ----------
+    case SWING_UP: {
+        u_forca = controlSwingUp(x2_rad, vel_ang, x1_m, vel_cart);
+
+        // Verifica condição de transição para LQR
+        if (fabsf(x2_rad) < ZONA_ESTABILIZACAO && fabsf(vel_ang) < VEL_ANG_TRANSICAO) {
+            modo_atual = LQR_ATIVO;
+            // Inicializa observador com estados estimados atuais
+            x_hat(0, 0) = x1_m;
+            x_hat(1, 0) = x2_rad;
+            x_hat(2, 0) = vel_cart;
+            x_hat(3, 0) = vel_ang;
+            erro_integrado = 0;
+            cont_serial = 0;
+            Serial.println(">> TRANSICAO: LQR ATIVO!");
+        }
+
+        if (++cont_serial >= 10) { // Serial a cada 100 ms
+            cont_serial = 0;
+            float E = 0.5f * I_PEND * vel_ang * vel_ang
+                    + MP * G_ACC * L_PEND_COM * (cosf(x2_rad) - 1.0f);
+            Serial.printf("SWING | Ang:%.2f Vel:%.1f Pos:%.3f F:%.1f E:%.3f\n",
+                           x2_rad, vel_ang, x1_m, u_forca, E);
+        }
+        break;
+    }
+
+    // ---------- LQR: estabilização com observador ----------
+    case LQR_ATIVO: {
+        // Se o pêndulo cair além do limite, volta ao swing-up
+        if (fabsf(x2_rad) > ANGULO_LIMITE_LQR) {
+            acionarMotor(0);
+            Serial.printf("PERDEU EQUILIBRIO: Ang=%.3f rad. Motor desligado.\n", x2_rad);
+            while (1);
+        }
+
+        BLA::Matrix<2, 1> y = {x1_m, x2_rad};
+
+        // Integrador (referência de ângulo = 0) com anti-windup
+        float erro_angulo = 0.0f - x2_rad;
+        erro_integrado += erro_angulo * Ts;
+        erro_integrado = constrain(erro_integrado, -0.5f, 0.5f);
+
+        // Observador de estados (Luenberger)
+        auto y_erro = y - (Ck_obs * x_hat);
+        x_hat = (Ak * x_hat) + (Bk * u_forca) + (Ld * y_erro);
+
+        // Lei de controle LQR — SATURAR antes de armazenar em u_forca
+        // (o observador usa u_forca no próximo ciclo; se não saturar,
+        //  ele diverge porque "acha" que aplicou força infinita)
+        u_forca = -((Kod * x_hat)(0, 0) + (Kid * erro_integrado));
+        u_forca = constrain(u_forca, -FORCA_MAX, FORCA_MAX);
+
+        if (++cont_serial >= 10) { // Serial a cada 100 ms
+            cont_serial = 0;
+            Serial.printf("LQR  | Ang:%.3f Pos:%.3f F:%.1f xh:[%.3f %.3f %.3f %.3f]\n",
+                           x2_rad, x1_m, u_forca,
+                           x_hat(0,0), x_hat(1,0), x_hat(2,0), x_hat(3,0));
+        }
+        break;
+    }
+    }
+
+    // 5. Atuação
+    acionarMotor(u_forca);
+
+    // 6. Sincronismo (período fixo de 10 ms)
+    while (micros() - tempo_inicio < (unsigned long)(Ts * 1000000));
+}

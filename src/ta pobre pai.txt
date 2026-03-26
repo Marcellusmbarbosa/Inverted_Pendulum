@@ -1,0 +1,85 @@
+#include <Arduino.h>
+#include <ESP32Encoder.h>
+
+// --- Configuração de Pinos ---
+#define PIN_RPWM 15 
+#define PIN_LPWM 2   
+#define PIN_REN  27 
+#define PIN_LEN  14 
+
+#define ENC_PEND_A 32
+#define ENC_PEND_B 33
+#define ENC_CART_A 34
+#define ENC_CART_B 35
+
+//5000 para direita e esquerda. 
+
+// 0 = -1500
+//90 = 1025
+//180 = -500 (470...)
+//270 = 0
+// 0 = 500
+//--------> sem incrementar
+
+ESP32Encoder encCart;
+ESP32Encoder encPend;
+
+// --- CALIBRAÇÃO (Ajuste estes números) ---
+// 1. Mova o carrinho 10cm e veja quantos pulsos (Raw) deu. K_POS = 0.1 / Pulsos.
+const float K_POS = 0.0000215; // Valor exemplo mais realista
+// 2. Gire o pêndulo 180 graus (3.14 rad). K_ANG = 3.14 / Pulsos.
+const float K_ANG = 0.0015; 
+
+void setup() {
+    Serial.begin(115200);
+
+    pinMode(PIN_REN, OUTPUT);
+    pinMode(PIN_LEN, OUTPUT);
+    digitalWrite(PIN_REN, HIGH);
+    digitalWrite(PIN_LEN, HIGH);
+
+    ESP32Encoder::useInternalWeakPullResistors = UP;
+    encCart.attachFullQuad(ENC_CART_A, ENC_CART_B);
+    encPend.attachFullQuad(ENC_PEND_A, ENC_PEND_B);
+
+    // DEFINE O ZERO: 
+    // Coloque o carrinho no MEIO e o pêndulo para CIMA antes de ligar/resetar.
+    encCart.setCount(0);
+    encPend.setCount(0);
+
+    Serial.println("MODO CALIBRAÇÃO ATIVO");
+    Serial.println("Formato: [Pulsos_Cart | Distancia] [Pulsos_Pend | Angulo]");
+    delay(2000);
+}
+
+void acionarMotor(int vel) {
+    // Trava de Segurança: Se a distância passar de 0.4m (40cm), desliga o motor
+    float dist_atual = encCart.getCount() * K_POS;
+    if (abs(dist_atual) > 0.40) {
+        analogWrite(PIN_RPWM, 0);
+        analogWrite(PIN_LPWM, 0);
+        return;
+    }
+
+    if (vel >= 0) {
+        analogWrite(PIN_RPWM, vel);
+        analogWrite(PIN_LPWM, 0);
+    } else {
+        analogWrite(PIN_RPWM, abs(vel));
+        analogWrite(PIN_LPWM, 0);
+    }
+}
+
+void loop() {
+    long rawCart = (long)encCart.getCount();
+    long rawPend = (long)encPend.getCount();
+    
+    float dist = rawCart * K_POS;
+    float ang  = rawPend * K_ANG;
+
+    // Monitoramento completo para ajuste
+    Serial.printf("CART: %ld (%fm) | PEND: %ld (%frad) | PWM: 200\n", rawCart, dist, rawPend, ang);
+
+    acionarMotor(200); // Movendo para a direita
+    delay(50);
+}

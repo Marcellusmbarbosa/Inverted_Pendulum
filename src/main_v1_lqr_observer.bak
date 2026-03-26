@@ -1,0 +1,360 @@
+// ============================================================================
+// Projeto Sarisa — Pêndulo Invertido (somente LQR)
+// Hardware: ESP32 WROOM DevKit 30 pinos + BTS7960 + 2 Encoders Incrementais
+// Controle: LQR + Integrador + Observador de Luenberger
+// Ref: Feedback Instruments Digital Pendulum 33-005-1M5
+// ============================================================================
+//
+// Convenção de ângulo: x2 = 0 → pêndulo para CIMA (equilíbrio instável)
+//                      x2 = ±PI → pêndulo para BAIXO (equilíbrio estável)
+//
+// Vetor de estados: x = [posição_carrinho, ângulo_pêndulo, vel_carrinho, vel_angular]
+//
+// Modo de operação:
+//   1. Segure o pêndulo para CIMA e carrinho no MEIO do trilho
+//   2. Envie 'L' no Serial para zerar encoders e iniciar LQR
+//   3. Solte o pêndulo — o LQR estabiliza
+//   4. Envie 'P' para parar, 'R' para resetar
+// ============================================================================
+
+#include <Arduino.h>
+#include <BasicLinearAlgebra.h>
+#include <ESP32Encoder.h>
+
+using namespace BLA;
+
+// ========================== Pinagem do Hardware =============================
+
+// Motor (Ponte H BTS7960) — RPWM(D15)=DIREITA, LPWM(D4)=ESQUERDA
+#define PIN_RPWM 15
+#define PIN_LPWM 4
+#define PIN_REN  27
+#define PIN_LEN  14
+
+// Encoder do Pêndulo (corrigido na calibração 26/03/2026)
+#define ENC_PEND_A 32
+#define ENC_PEND_B 33
+
+// Encoder do Carrinho (corrigido na calibração 26/03/2026)
+#define ENC_CART_A 34
+#define ENC_CART_B 35
+
+// ======================== Objetos de Hardware ===============================
+
+ESP32Encoder encCart;
+ESP32Encoder encPend;
+
+// ===================== Constantes de Calibração =============================
+// Calibração empírica (26/03/2026):
+//   Trilho: ~1.0m entre fins de curso, 11508 pulsos → K_POS = 1.0/11508
+//   Pêndulo: 2050 pulsos/volta → K_ANG = 2*PI/2050
+const float K_POS = 0.0000869;    // pulsos → metros (calibrado)
+const float K_ANG = 0.003065;     // pulsos → radianos (calibrado)
+const float Ts    = 0.01;         // Período de amostragem [s] (10 ms, 100 Hz)
+
+// ===================== Ajustes do Motor =====================================
+const float FATOR_INVERSAO = 1.0;  // Direção confirmada (dados mostram oscilação com +1.0)
+const int   PWM_MINIMO     = 30;   // Zona morta do PWM (reduzido p/ menor descontinuidade)
+const float FORCA_MAX      = 17.0; // Força máxima do atuador [N] (Manual: 11.3–17.0)
+
+// ===================== Limites de Segurança =================================
+const float POSICAO_LIMITE     = 0.45; // Limite do trilho [m] (margem de segurança)
+const float ANGULO_LIMITE_LQR  = 0.8;  // Ângulo máximo antes de parar [rad] (~46°)
+
+// ================ Matrizes e Ganhos do Controlador LQR =====================
+
+// NOTA: Ganhos escaláveis a partir do original.
+// Original (1.0x): Kod = {-2.6643, 359.3386, -271.5031, 180.3730}, Kid = 0.0487
+// 0.5x: oscilou ~15s (funcionou, lento). 0.7x: saturou imediatamente (divergiu).
+// Voltando a 0.5x como base funcional.
+const float Kid = 0.0244; // 0.5 * 0.0487
+
+BLA::Matrix<1, 4> Kod = {-1.3322, 179.6693, -135.7516, 90.1865}; // 0.5x
+
+// Matriz de dinâmica discreta (Ak)
+BLA::Matrix<4, 4> Ak = {
+    1.0000,  0.0000,  0.0100,  0.0000,
+    0.0,     1.0009, -0.0000,  0.0100,
+    0.0,     0.0034,  0.9996,  0.0000,
+    0.0,     0.1740, -0.0007,  1.0007
+};
+
+// Matriz de entrada discreta (Bk)
+BLA::Matrix<4, 1> Bk = {0.0000, 0.0001, 0.0083, 0.0143};
+
+// Ganho do observador de estados (Ld)
+// Observador restaurado aos ganhos originais para estimação rápida.
+BLA::Matrix<4, 2> Ld = {
+     1.7693, -0.0081,
+    -0.0122,  1.7718,
+    78.2319, -0.7117,
+    -1.1187, 78.6213
+};
+
+// Matriz de saída (Ck_obs)
+BLA::Matrix<2, 4> Ck_obs = {
+    1, 0, 0, 0,
+    0, 1, 0, 0
+};
+
+// ====================== Variáveis de Estado ================================
+
+BLA::Matrix<4, 1> x_hat = {0, 0, 0, 0}; // Estado estimado pelo observador
+float erro_integrado = 0;
+float u_forca = 0;
+bool  lqr_ativo = false;
+
+// Variáveis auxiliares
+float angulo_anterior  = 0;
+float posicao_anterior = 0;
+int   cont_serial      = 0;   // Downsampling da saída serial
+
+// =================== Calibração do Zero (oscilação) ========================
+// Estratégia: pendulo oscila livremente, detecta inversão de velocidade
+// (picos e vales), acumula média das posições → zero verdadeiro.
+bool  calibrando       = false;
+float cal_offset_pend  = 0;      // Offset do encoder do pêndulo [rad]
+float cal_vel_anterior = 0;      // Velocidade angular anterior (detecção de pico)
+float cal_soma_picos   = 0;      // Soma das posições nos picos
+int   cal_n_picos      = 0;      // Número de picos detectados
+int   cal_cont_serial  = 0;      // Downsampling serial da calibração
+unsigned long cal_inicio_ms = 0; // Timestamp de início
+
+// ======================== Funções Auxiliares ================================
+
+// Normaliza ângulo para o intervalo [-PI, +PI]
+float normalizarAngulo(float ang) {
+    ang = fmod(ang, 2.0f * PI);
+    if (ang > PI)  ang -= 2.0f * PI;
+    if (ang < -PI) ang += 2.0f * PI;
+    return ang;
+}
+
+// ======================== Função do Motor ==================================
+
+void acionarMotor(float forca_n) {
+    forca_n *= FATOR_INVERSAO;
+    forca_n = constrain(forca_n, -FORCA_MAX, FORCA_MAX);
+
+    int pwm_base  = (fabsf(forca_n) / FORCA_MAX) * (255 - PWM_MINIMO);
+    int pwm_final = (fabsf(forca_n) > 0.1f) ? pwm_base + PWM_MINIMO : 0;
+    pwm_final = min(pwm_final, 255);
+
+    if (forca_n >= 0) {
+        analogWrite(PIN_RPWM, pwm_final);
+        analogWrite(PIN_LPWM, 0);
+    } else {
+        analogWrite(PIN_RPWM, 0);
+        analogWrite(PIN_LPWM, pwm_final);
+    }
+}
+
+// Reseta estado do controlador
+void resetarEstado() {
+    encCart.clearCount();
+    encPend.clearCount();
+    x_hat = {0, 0, 0, 0};
+    erro_integrado   = 0;
+    u_forca          = 0;
+    angulo_anterior  = 0;
+    posicao_anterior = 0;
+    cont_serial      = 0;
+    lqr_ativo        = false;
+    acionarMotor(0);
+}
+
+// ============================== Setup ======================================
+
+void setup() {
+    Serial.begin(115200);
+
+    // PWM a LOW para garantir motor parado antes de habilitar a ponte H
+    pinMode(PIN_RPWM, OUTPUT);
+    pinMode(PIN_LPWM, OUTPUT);
+    analogWrite(PIN_RPWM, 0);
+    analogWrite(PIN_LPWM, 0);
+
+    // Habilita a ponte H
+    pinMode(PIN_REN, OUTPUT);
+    pinMode(PIN_LEN, OUTPUT);
+    digitalWrite(PIN_REN, HIGH);
+    digitalWrite(PIN_LEN, HIGH);
+
+    ESP32Encoder::useInternalWeakPullResistors = UP;
+    encCart.attachFullQuad(ENC_CART_A, ENC_CART_B);
+    encPend.attachFullQuad(ENC_PEND_A, ENC_PEND_B);
+    encCart.clearCount();
+    encPend.clearCount();
+
+    Serial.println("============================================");
+    Serial.println("  Sarisa — LQR Pendulo Invertido (Calibrado)");
+    Serial.println("============================================");
+    Serial.printf("  K_POS = %.7f  K_ANG = %.6f\n", K_POS, K_ANG);
+    Serial.println("  Pend: A=32 B=33 | Cart: A=34 B=35");
+    Serial.println("  Motor: RPWM(15)=DIR  LPWM(4)=ESQ");
+    Serial.println("============================================\n");
+    Serial.println("Segure o pendulo para CIMA e carrinho no MEIO.");
+    Serial.println("Envie 'L' para iniciar LQR");
+    Serial.println("Envie 'C' para CALIBRAR zero do pendulo (oscilacao livre)");
+    Serial.println("Envie 'P' para PARAR motor");
+    Serial.println("Envie 'R' para RESETAR encoders\n");
+}
+
+// =============================== Loop ======================================
+
+void loop() {
+    // =============== Modo Calibração (oscilação livre) =====================
+    if (calibrando) {
+        unsigned long tempo_cal = micros();
+
+        float x2_raw = encPend.getCount() * K_ANG;
+        float x2_rad = normalizarAngulo(x2_raw);
+        float vel_ang = normalizarAngulo(x2_rad - angulo_anterior) / Ts;
+        angulo_anterior = x2_rad;
+
+        // Detecta inversão de velocidade (pico ou vale da oscilação)
+        if (cal_vel_anterior != 0 && vel_ang * cal_vel_anterior < 0) {
+            cal_soma_picos += x2_rad;
+            cal_n_picos++;
+        }
+        cal_vel_anterior = vel_ang;
+
+        // Serial a cada 100ms
+        if (++cal_cont_serial >= 10) {
+            cal_cont_serial = 0;
+            float media_parcial = (cal_n_picos > 0) ? cal_soma_picos / cal_n_picos : 0;
+            Serial.printf("CAL  | Ang:%.4f Vel:%.2f Picos:%d Media:%.4f\n",
+                          x2_rad, vel_ang, cal_n_picos, media_parcial);
+        }
+
+        // Verificar comandos
+        if (Serial.available()) {
+            char cmd = Serial.read();
+            if (cmd == 'P' || cmd == 'p' || cmd == 'F' || cmd == 'f') {
+                // Finalizar calibração
+                if (cal_n_picos >= 2) {
+                    cal_offset_pend = cal_soma_picos / cal_n_picos;
+                    Serial.printf("\n>> CALIBRACAO CONCLUIDA! %d picos detectados.\n", cal_n_picos);
+                    Serial.printf(">> Offset = %.4f rad (%.2f graus)\n",
+                                  cal_offset_pend, cal_offset_pend * 180.0f / PI);
+                    Serial.println(">> Offset sera aplicado automaticamente ao iniciar LQR.\n");
+                } else {
+                    Serial.println("\n>> Poucos picos (<2). Calibracao cancelada, tente com mais oscilacao.");
+                    cal_offset_pend = 0;
+                }
+                calibrando = false;
+                Serial.println("Envie 'L' para iniciar LQR, 'C' para recalibrar.");
+            }
+        }
+
+        // Manter período de 10ms
+        while (micros() - tempo_cal < (unsigned long)(Ts * 1000000));
+        return;
+    }
+
+    // =============== Comandos via Serial (quando LQR inativo) ==============
+    if (!lqr_ativo) {
+        if (Serial.available()) {
+            char cmd = Serial.read();
+            if (cmd == 'L' || cmd == 'l') {
+                Serial.println("Zerando encoders... Segure o pendulo em CIMA!");
+                delay(2000);
+                resetarEstado();
+                // Aplicar offset de calibração (se existir)
+                if (fabsf(cal_offset_pend) > 0.001f) {
+                    Serial.printf(">> Aplicando offset de calibracao: %.4f rad\n", cal_offset_pend);
+                }
+                lqr_ativo = true;
+                Serial.println(">> LQR ATIVO! Solte o pendulo.");
+            } else if (cmd == 'C' || cmd == 'c') {
+                Serial.println("\n>> CALIBRACAO DO ZERO DO PENDULO");
+                Serial.println("   Solte o pendulo e deixe oscilar livremente.");
+                Serial.println("   O algoritmo detecta os picos e calcula a media.");
+                Serial.println("   Envie 'P' ou 'F' para finalizar a calibracao.\n");
+                encPend.clearCount();
+                angulo_anterior = 0;
+                cal_vel_anterior = 0;
+                cal_soma_picos = 0;
+                cal_n_picos = 0;
+                cal_cont_serial = 0;
+                cal_inicio_ms = millis();
+                calibrando = true;
+            } else if (cmd == 'R' || cmd == 'r') {
+                resetarEstado();
+                cal_offset_pend = 0;
+                Serial.println(">> Encoders resetados. Offset de calibracao removido.");
+            }
+        }
+        delay(10);
+        return;
+    }
+
+    unsigned long tempo_inicio = micros();
+
+    // 1. Leitura dos sensores (valores calibrados)
+    float x1_m   = encCart.getCount() * K_POS;
+    float x2_raw = encPend.getCount() * K_ANG;
+    float x2_rad = normalizarAngulo(x2_raw - cal_offset_pend); // Aplica offset de calibração
+
+    // 2. Velocidades por diferença finita
+    float vel_cart = (x1_m - posicao_anterior) / Ts;
+    float vel_ang  = normalizarAngulo(x2_rad - angulo_anterior) / Ts;
+    posicao_anterior = x1_m;
+    angulo_anterior  = x2_rad;
+
+    // 3. Proteção de segurança — posição do carrinho
+    if (fabsf(x1_m) > POSICAO_LIMITE) {
+        resetarEstado();
+        Serial.printf("SEGURANCA: Pos=%.3fm > lim=%.2fm. Motor parado.\n",
+                      x1_m, POSICAO_LIMITE);
+        Serial.println("Envie 'L' para reiniciar ou 'R' para resetar.");
+        return;
+    }
+
+    // 4. Proteção de segurança — ângulo do pêndulo (corte apenas em ângulo extremo)
+    if (fabsf(x2_rad) > ANGULO_LIMITE_LQR) {
+        resetarEstado();
+        Serial.printf("PERDEU EQUILIBRIO: Ang=%.3f rad. Motor parado.\n", x2_rad);
+        Serial.println("Envie 'L' para reiniciar ou 'R' para resetar.");
+        return;
+    }
+
+    // 5. Comando de parada durante operação
+    if (Serial.available()) {
+        char cmd = Serial.read();
+        if (cmd == 'P' || cmd == 'p') {
+            resetarEstado();
+            Serial.println(">> MOTOR PARADO. Envie 'L' para reiniciar.");
+            return;
+        }
+    }
+
+    // 6. Controlador LQR com observador de Luenberger
+    BLA::Matrix<2, 1> y = {x1_m, x2_rad};
+
+    // Integrador (referência de ângulo = 0) com anti-windup
+    float erro_angulo = 0.0f - x2_rad;
+    erro_integrado += erro_angulo * Ts;
+    erro_integrado = constrain(erro_integrado, -0.5f, 0.5f);
+
+    // Observador de estados (Luenberger)
+    auto y_erro = y - (Ck_obs * x_hat);
+    x_hat = (Ak * x_hat) + (Bk * u_forca) + (Ld * y_erro);
+
+    // Lei de controle LQR — saturar antes de armazenar
+    u_forca = -((Kod * x_hat)(0, 0) + (Kid * erro_integrado));
+    u_forca = constrain(u_forca, -FORCA_MAX, FORCA_MAX);
+
+    if (++cont_serial >= 10) {
+        cont_serial = 0;
+        Serial.printf("LQR  | Ang:%.3f Pos:%.3f F:%.1f xh:[%.3f %.3f %.2f %.2f]\n",
+                       x2_rad, x1_m, u_forca,
+                       x_hat(0,0), x_hat(1,0), x_hat(2,0), x_hat(3,0));
+    }
+
+    // 7. Atuação
+    acionarMotor(u_forca);
+
+    // 8. Sincronismo (período fixo de 10 ms)
+    while (micros() - tempo_inicio < (unsigned long)(Ts * 1000000));
+}

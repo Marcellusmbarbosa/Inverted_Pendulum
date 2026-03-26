@@ -1,0 +1,4501 @@
+i
+Digital Pendulum System
+TEACHING MANUAL 1
+33-005-4M5
+MATLAB 5 Version
+Feedback
+Feedback Instruments Ltd, Park Road, Crowborough, E. Sussex, TN6 2QR, UK.
+Telephone: +44 (0) 1892 653322,      Fax: +44 (0) 1892 663719.
+email: feedback@fdbk.co.uk     website: http://www.fbk.com
+Manual: 33-005-4M5 Ed02 062000
+Printed in England by Fl Ltd, Crowborough
+Feedback Part No. 1160–330054M5
+Notes
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PREFACE
+33-005-4M5
+i
+THE HEALTH AND SAFETY AT WORK ACT 1974
+We are required under the Health and Safety at Work Act 1974, to make available to users of this equipment certain information
+regarding its safe use.
+The equipment, when used in normal or prescribed applications within the parameters set for its mechanical and electrical performance,
+should not cause any danger or hazard to health or safety if normal engineering practices are observed and they are used in
+accordance with the instructions supplied.
+If, in specific cases, circumstances exist in which a potential hazard may be brought about by careless or improper use, these will be
+pointed out and the necessary precautions emphasised.
+While we provide the fullest possible user information relating to the proper use of this equipment, if there is any doubt whatsoever
+about any aspect, the user should contact the Product Safety Officer at Feedback Instruments Limited, Crowborough.
+This equipment should not be used by inexperienced users unless they are under supervision.
+We are required by European Directives to indicate on our equipment panels certain areas and warnings that require attention by the
+user. These have been indicated in the specified way by yellow labels with black printing, the meaning of any labels that may be fixed to
+the instrument are shown below:
+CAUTION -
+RISK OF
+DANGER
+CAUTION -
+RISK OF
+ELECTRIC SHOCK
+CAUTION -
+ELECTROSTATIC
+SENSITIVE DEVICE
+Refer to accompanying documents
+PRODUCT IMPROVEMENTS
+We maintain a policy of continuous product improvement by incorporating the latest developments and components into our equipment,
+even up to the time of dispatch.
+All major changes are incorporated into up-dated editions of our manuals and this manual was believed to be correct at the time of
+printing. However, some product changes which do not affect the instructional capability of the equipment, may not be included until it is
+necessary to incorporate other significant changes.
+COMPONENT REPLACEMENT
+Where components are of a ‘Safety Critical’ nature, i.e. all components involved with the supply or carrying of voltages at supply
+potential or higher, these must be replaced with components of equal international safety approval in order to maintain full equipment
+safety.
+In order to maintain compliance with international directives, all replacement components should be identical to those originally
+supplied.
+Any component may be ordered direct from Feedback or its agents by quoting the following information:
+1.
+Equipment type
+3.
+Component reference
+2.
+Component value
+4.
+Equipment serial number
+Components can often be replaced by alternatives available locally, however we cannot therefore guarantee continued performance
+either to published specification or compliance with international standards.
+DIGITAL PENDULUM SYSTEM
+PREFACE
+TEACHING MANUAL 1
+ii
+33-005-4M5
+      DECLARATION CONCERNING ELECTROMAGNETIC COMPATIBILITY
+Should this equipment be used outside the classroom, laboratory study area or similar such place for which it is designed and sold then
+Feedback Instruments Ltd hereby states that conformity with the protection requirements of the European Community Electromagnetic
+Compatibility Directive (89/336/EEC) may be invalidated and could lead to prosecution.
+This equipment, when operated in accordance with the supplied documentation, does not cause electromagnetic disturbance outside its
+immediate electromagnetic environment.
+COPYRIGHT NOTICE
+© Feedback Instruments Limited
+All rights reserved. No part of this publication may be reproduced, stored in a retrieval system, or transmitted, in any form or by any
+means, electronic, mechanical, photocopying, recording or otherwise, without the prior permission of Feedback Instruments Limited.
+ACKNOWLEDGEMENTS
+Feedback Instruments Ltd acknowledge all trademarks.
+IBM, IBM - PC are registered trademarks of International Business Machines.
+MICROSOFT,  WINDOWS 95, WINDOWS 3.1 are registered trademarks of Microsoft Corporation.
+MATLAB is a registered trademark of Mathworks Inc.
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+CONTENTS
+33-005-4M5
+1
+Table of Contents
+1
+INTRODUCTION
+1-1
+2
+MODELLING AND CONTROL PROBLEMS
+2-1
+2.1
+The system model in SIMULINK
+2-11
+3
+IDENTIFICATION.
+3-1
+3.1
+Start of the identification experiment.
+3-1
+3.2
+Identification of the pendulum friction.
+3-3
+3.2.1
+Test of encoder quality.
+3-7
+3.3
+Minimum force needed to move the cart.
+3-8
+3.4
+Cart friction identification.
+3-12
+3.5
+Dead zones identification DZcv, DZpv
+3-16
+3.6
+Impulse excitation
+3-20
+3.7
+Results of pendulum identification process.
+3-23
+3.8
+Identified parameters.
+3-26
+3.9
+Verification and tuning.
+3-27
+3.10
+Optimisation of Jp and fp
+3-32
+4
+PID CONTROLLERS.
+4-1
+4.1
+SIMULINK models for PID double controller
+4-4
+4.2
+Crane mode  (2 PID for Pendulum Angle And Cart Position)
+4-5
+4.3
+Self erecting mode
+4-9
+4.4
+Examples of PID controllers, used in the simulation model and real system.
+4-14
+DIGITAL PENDULUM SYSTEM
+CONTENTS
+TEACHING MANUAL 1
+TOC 2
+33-005-4M5
+5
+LINEAR-QUADRATIC CONTROLLERS
+5-1
+5.1
+LQ control principles
+5-1
+5.2
+Design of LQ controllers (crane problem)
+5-4
+5.3
+LQ control experiments.
+5-12
+5.4
+Discrete LQ controllers
+5-22
+6
+LIST OF DIRECTORIES AND FILES :
+6-1
+CHAPTER 1
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+INTRODUCTION
+33-005-4M5
+1-1
+1 INTRODUCTION
+In this manual you will find the following sections:
+• Modelling and control problems
+• Identification
+• PID control
+• LQ control.
+When you use the manual for the first time, you can start experiments from the
+demonstrations provided on the software installation disk. However, before exploring the
+examples, you need to know if the system model is compatible with reality.
+Default parameters are stored in the model but it is recommended to pass through the
+identification procedure, as it cannot be guaranteed that they are well identified.
+At the beginning of this manual you find the model of the cart-pendulum system. It
+contains several dedicated blocks added to obtain the best compatibility with the real
+laboratory system. The model is equipped with a set of default parameter values. The
+parameters can be divided into three groups:
+• Constant (not to be identified)
+• Well identified
+• Poorly identified.
+For example the pendulum and the cart are produced with production tolerances and so
+the masses are assumed to be identical.
+A different case is with the moment of inertia of the rotating pendulum. It is slightly
+different in different sets. The reason is simple: the pendulum is assembled by the user in
+the laboratory and so small differences in the dimensions of the assembled set may
+occur. Unfortunately, in a real system there is usually a group of poorly identified
+parameters, characterised by random behaviour. In the pendulum-cart system,
+parameters related to the cart friction belong to this group.
+The identification procedures generate experiments to obtain friction parameters to be
+used in the Friction block of the model. We must note that the cart friction function vs. cart
+velocity is an approximation of the real friction force. It is not sufficient to identify it once,
+but must be verified and usually tuned by signals exciting the simulation model and the
+real system.
+CHAPTER 1
+DIGITAL PENDULUM SYSTEM
+INTRODUCTION
+TEACHING MANUAL 1
+1-2
+33-005-4M5
+Verification and tuning is an obligatory step at the end of identification. If the time
+responses of the model and the real system are close to each other, as far as shape and
+amplitude of signals are concerned, then we can trust in our modelling.
+The PID and LQ controllers presented in sections 4 and 5 are fortunately not very
+sensitive to model errors. Nevertheless,  they also require an appropriate model of the
+system. The user is equipped with the simulation tools to build PID or LQ controllers. The
+parameters of simulation can be verified on the real system in two ways. First the existing
+demo files can be used where both controllers are invoked from the main control window
+pendulum m-file. Second the  pd_2ddn.m can be accessed from the MATLAB Command
+Window, where the external interface file for the PID control is stored. This file is also
+used for both practicals concerning PID and LQ controllers.
+Matlab toolboxes necessary in order to execute the experiments shown in this manual
+are:
+• Matlab version 5.3
+• Control System  version 4.2.1
+• Signal Processing version 4.2.1
+• Optimization version 1.5.1
+• Non-linear Control version 1.1.1
+• Simulink version 3.0.1
+Typographical conventions
+The following conventions are used  throughout this manual.
+Italics
+Variables, SIMULINK blocks, files, function and button
+names.
+Grey background
+Text typed in the MATLAB Command Window
+Courier New
+Results shown in the MATLAB Command Window
+Installation Instructions
+Ensure that Windows and the basic Digital Pendulum software are installed and running
+properly. ( Refer to Manual 33000M5 - Feedback MATLAB Based Control Products –
+Software Installation ).
+After installation your \Pendulum directory contains all the required files and
+subdirectories, which are listed in Section 6.
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+INTRODUCTION
+33-005-4M5
+2-1
+2 MODELLING AND CONTROL PROBLEMS
+The pendulum-cart system can illustrate several complex and nontrivial problems of
+control theory. The following characterisation is essential for this system:
+ four state variables and one control variable
+ the dynamics are described  by one ordinary differential equation (ode) of the
+fourth order or by four ordinary differential equations of the first order.
+ there are an infinite number of equilibrium points for the uncontrolled system;
+there are also an infinite number of equilibrium points for the system with linear
+feedback.
+For our practicals  we choose three equilibrium points:
+• The first point is stable - the cart at a point close to the left end of the rail and
+the pendulum in its down position
+• The second point is also stable - the cart at a point close to the right end of
+the rail and the pendulum in its down position
+• The third point is unstable - the cart at the centre of the rail and the
+pendulum in its upright position.
+ the system is non-linear
+ the control is bounded
+ the length of the rail is limited and the cart position is bounded
+A number of key words can define in short the content of topics related to the pendulum-
+cart system. The underlined key words below refer to the material presented in this
+Teaching Manual 1.
+Control problems
+• crane 
+steering from point to point
+• pendulum
+swinging up to the vicinity of the upright position and stabilisation
+                             in the upright position
+Quality criteria
+• minimisation of the Integral Absolute Error (IAE)
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-2
+33-005-4M5
+• minimum cost (energy)
+• time-optimal
+Controllers
+• PID
+• LQ
+Tools applied
+• mathematical model
+Programming environment
+• MS Windows
+• unique Real Time Kernel
+• MATLAB &  SIMULINK
+• MATLAB toolboxes: CONTROL, SIGNAL PROCESSING, NONLINEAR
+CONTROL DESIGN, etc.
+There are two essential components of virtually any controller: a mechanism for
+knowledge representation and a mechanism for decision-making. With conventional
+controllers knowledge is represented by a mathematical model (such as a set of
+differential equations) and decision-making is based on optimisation.
+When the system is complex or less precisely known, it becomes difficult to characterise
+the knowledge adequately with conventional means. Alternative ways must be found to
+encode the available knowledge about the system and can result in the development of
+intelligent controllers.
+Note also however, that a control algorithm can be built without any model. This is the so
+called “Black box”  technique.
+The closed-loop responses with different controllers are more or less sensitive to variation
+of the model parameters. The LQ and PID controllers are not especially sensitive, but in
+most cases, however, a precise identification of the dynamics of the laboratory model is
+essential for the generation of an appropriate control algorithm.
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-3
+The position measurement signals from the encoders play a crucial role in achieving the
+control goal. Measurement technique is another factor influencing the quality of the
+control. The velocities in the system are not measured, they are observed and poor
+observation algorithms may be a source of serious errors.
+        
+DC
+x1
+x2
+centre of the rail
+ centre of mass of the system
+ axis of rotation
+l
+U
+c
+m
+mp
+Figure 2-1: Laboratory model of Pendulum-Cart System
+centre of mass
+of the system
+mc + mp
+(
+)g
+V
+u
+Tc
+l
+cart
+x1
+x2
+Figure 2-2: Showing the forces acting on the cart
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-4
+33-005-4M5
+Figure 2-1 shows a schematic of the Pendulum-Cart system, whilst  Figure 2-2 shows the
+forces acting.
+The pendulum rotates in a vertical plane around an axis located on a cart. The cart can
+move along a horizontal rail whose long axis lies in the plane of rotation. A control force
+U, parallel to the rail, is applied to the cart. The mass of the cart is denoted by mc  and the
+mass of the pendulum, by mp. l is the distance from the axis of rotation to the centre of
+mass of the pendulum-cart system. J is the moment of inertia of the pendulum-cart
+system with respect to the centre of mass.
+The state of the system is the vector x = col(x1, x2, x3, x4) where:
+x1 is the cart position (distance from the centre of the rail)
+x2 is the angle between the upward vertical and the ray pointing at the centre of
+mass, measured counter-clockwise from the cart (x2 = 0 for the upright position of
+the pendulum)
+x3 is the cart velocity
+x4 is the pendulum angular velocity
+Tc denotes the friction in the motion of the cart
+Dp is the moment of  friction in the angular motion of the pendulum, proportional to
+the angular velocity:  Dp = fp x4
+The force of reaction of the rail V acts vertically on the cart. As the horizontal co-ordinate
+of the centre of mass is equal to  x1 - lsin x2  and the vertical to  lcos x2 , the equations of
+motion are as follows:
+(mc + mp) (x1 − l sinx2)" = F − Tc ,
+(mc + mp) (l cosx2)" = V − (mc + mp)g,
+J x2" = (F − Tc) l cosx2  + Vl sinx2  − Dp.
+(.)" denotes the second derivative with respect to time t and (.)’ denotes the first derivative
+with respect to time t. The first two equations describe the translation of the centre of
+mass, while the third describes the rotation of the whole system around the centre of
+mass. After the elimination of V and simple calculations we obtain the state equations (for
+t ≥ 0)
+′ =
+x
+x
+1
+3,
+ 
+sin
+ 
+)
+sin
+ 
+(
+cos
+)
+sin
+ 
+(
+2
+2
+4
+2
+2
+2
+2
+4
+3
+x
+l
+J
+x
+f
+x
+g
+x
+l
+x
+x
+T
+F
+a
+x
+p
+c
+µ
+µ
+µ
++
+−
++
+−
+−
+=
+′
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-5
+′ =
+x
+x
+2
+4,
+ ′ =
+−
+−
++
+−
++
+x
+l
+x F
+T
+x
+x
+g
+x
+f x
+J
+l
+x
+c
+p
+4
+2
+4
+2
+2
+2
+4
+2
+2
+cos
+(
+sin
+)
+sin
+sin
+µ
+µ
+µ
+ 
+ 
+ 
+ 
+(2.1)
+where
+a
+l
+J
+m
+m
+c
+p
+=
++
++
+2
+ ,
+µ = (mc + mp)l.                                
+(2.2)
+The admissible controls are bounded
+| F(t) |  ≤  M. 
+(2.3)
+Cart friction
+The cart friction Tc in the model is a non linear function of the cart velocity x3, as shown in
+Figure 2-3.
+D Z c v
+-Y c
+Y c
+-X c
+X c
+-F C
+F C
+-F S
+F S
+-D Z c v
+T c  [N ]
+x 3 [m /s ]
+Figure 2-3: Cart friction Tc vs. cart velocity x3  (for a large range of x3)
+The following notation is used in Figure 2-3.
+FS
+-
+static friction,
+FC
+-
+dynamic or Coulomb friction ,
+Xc
+-
+cart velocity - beginning of the linear dependence zone,
+Yc
+-
+friction value for Xc point,
+DZcv
+dead zone of cart velocity.
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-6
+33-005-4M5
+Consider Figure 2-3. The diagram represents the experimental relationship between cart
+friction and cart velocity.
+Static friction exists in the dead zone of the cart, and this requires a force to be applied on
+order to start movement (0< x3 <DZcv). Having overcome this initial friction, however, the
+static friction reduces, with an approximately quadratic relation to velocity,  but the
+dynamic friction increases almost linearly with velocity.
+The static friction eventually reaches a constant value of zero (at x3 = xc), at which point
+the total friction becomes equal to the dynamic or Coulomb friction.
+Since friction always acts in a direction opposite to the direction of motion, the function is
+mirrored for negative values of x3 with the friction force changed in sign.
+In order to obtain some analytical results for the total friction force acting on the cart, we
+divide the friction function into 5 zones.
+1) 
+x3 < -xc
+Zone 1
+2) 
+–xc < x3 < -DVcv
+Zone 2
+3) 
+-DVcv < x3 < DVcv
+Zone 3
+4) 
+DVcv < x3 < xc
+Zone 4
+5) 
+X3 > xc
+Zone 5
+We shall only consider cases 3) 4) and 5) since 1) and 2) are mirror images of 3) and 4)
+Method of deriving the equations for the linear and quadratic parts of the friction
+function
+The relationship for the linear and quadratic parts of Tc, the friction function, are derived
+as follows:
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-7
+Linear
+Two points are needed for a solution:
+The standard equation for a line passing through the points (x1, y1) and (x2, y2) is
+y-y1 = (y2-y1)  .(x-x1)
+2.4
+           (x2-x1)
+Quadratic
+Either three points are needed for a solution, or two points and a known gradient at a
+point. Use the following assumptions:
+The equation is of the form y= ax2 + bx + c. 
+i)
+The curve passes through (x1 , y1) and (x2, y2)
+ii)
+The gradient at (x2, y2) is G. 
+iii)
+From i)  
+y’ =2ax +b
+From iii)       
+2ax2+b=G, and therefore b=G-2ax2
+iv)
+Therefore from i) 
+y=ax2 + (G-2ax2)x +c
+v)
+From ii) and iv)
+y1=ax12 +(G-2ax2)x1 + c and 
+vi)
+y2=ax22 +(G-2ax2)x2+ c
+vii)
+Subtracting vi) from vii) gives
+y2-y1 = a(x22 - x12) + (G-2ax2)(x2-x1)
+viii)
+Hence a can be found from viii), b from iv) and c from vi)
+From Figure 2-3 replace x1,y1 by  0, Fs. Replace x2,y2 by  xc, yc and  note that the
+gradient at this point is zero (G=0 at x=xc). Also at x=0 the friction is the static friction only
+(Fs) as the speed (x3) is zero, - hence c=Fs., and from iv) b=-2axc
+From viii)  a=  (y2-y1)        which is equivalent to    (yc-Fs)
+                       (x1-x2)2                                                       (xc)2
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-8
+33-005-4M5
+Zone 3
+The Friction linearly increases in the range DVcv < x3 < DVcv
+From Figure 2-3 the value of the Friction at x3 =  ± DVcv is ±Fs
+Using the linear method and equation 2.4, and noting that this linear part passes through
+the origin, we derive the relationship
+Tc = Fs.X3
+        DZcv
+Zone 4
+The static friction has a quadratic relation with velocity, decreasing as the velocity
+increases and eventually reaching zero, and the dynamic friction has a quadratic relation
+with  velocity. The total friction, which is the sum of the static and dynamic elements,
+therefore has a quadratic relation with velocity.
+We note that the static friction reaches a constant value of zero at x3=xc. This implies that
+its gradient at this point is zero. Using the quadratic method described above, with G=0,
+gives the following relation for Tc
+Tc= (Fs – Yc) .(X3)2   -2 (Fs – Yc) . X3  +  Fs
+             Xc2                      Xc
+Zone 5
+The static friction has reached zero and the dynamic or Coulomb friction increases
+linearly with velocity.
+Using the linear method and equation 2.4, and noting that this linear part passes through
+the point (xc, yc) we derive the relationship
+Tc = (Yc – Fc) .x3 – Fc
+             Xc
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-9
+Moment of Inertia
+The figure depicted in Figure 2-4 is used to illustrate calculations of the Moment of Inertia
+of the rotating pendulum
+lc
+lp
+lco
+lpo
+mpw
+mps
+rc
+rp
+Pendulum pole
+Pendulum weight
+Pendulum axis of
+rotation
+Figure 2-4:  View of the pendulum
+The following notation is used in Figure 2-4.
+mpw -
+mass of  the load pendulum  weight[kg],
+mps
+-
+mass of the pendulum pole [kg],
+lp
+-
+length of the pole [m],
+lpo
+-
+distance between centre of the pole mass and the pendulum rotation axis  [m],
+lc
+-
+length of  load [m],
+lco
+-
+distance between centre of the load mass and the pendulum rotation axis [m],
+rp
+-
+radius of the pole [m],
+rc
+-
+radius of the load [m].
+Moment of inertia of pendulum related to the pendulum rotation axis:
+x
+l
+m
+r
+m
+4
+1
+l
+m
+12
+1
+l
+m
+r
+m
+4
+1
+l
+m
+12
+1
+Jp
+2
+po
+ps
+2
+p
+ps
+2
+p
+ps
+2
+co
+pw
+2
+c
+pw
+2
+c
+pw
+
+
+
+
++
++
++
+
+
+
+
++
++
+=
+(2.4)
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-10
+33-005-4M5
+We shall make the following assumptions in order to simplify the model.
+• The pendulum is a uniform thin cylinder of length L metres and mass mp
+• The pivot position is at the mass centre of the cart and at one end of the pole
+• The cart behaves as a point mass Mc, at the pivot point
+Consider the pendulum cart system and consider the moment of inertia about the mass
+centre of the system
+Now it is a well known principle that if J is the Moment of Inertia about a first  axis through
+the mass centre and Jp is the Moment of Inertia about a second parallel axis separated
+by
+ 
+d
+ 
+from the first , then       Jp=J+Md2…………………………………………………... (2.5)
+The centre of mass ( C of M )of the system
+is such that Mpa= Mcb, and  a+b= L/2…(2.6)
+Hence the total Moment of Inertia about the mass centre   ( from ( 2.5 ) )
+is given by               J= Mp a2 + Mcb2  + MpL2……………………………………………(2.7)
+                                                                12
+And so   a =     L.Mc                      and b =         L.Mp
+  from ( 2.6 )………………(2.8)
+                     2(Mp+ Mc)                                 2(Mp+ Mc)
+Mp
+Mc
+b
+L/2
+a
+C of M
+Mc
+Mp
+Cart
+Pendulum pole
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-11
+From (2.7) and (2.8) the Moment of Inertia is
+J
+m
+m
+m
+L
+m
+m
+p
+c
+p
+c
+p
+=
++
++
+(
+)
+(
+)
+4
+12
+2
+(2.9)
+J can be expressed in terms of Jp , since there is no rotation of the cart about its own
+mass centre
+(
+)
+J
+Jp
+l
+m
+m
+c
+p
+=
+−
++
+2
+(2.10)
+The distance from the centre of mass to the axis of rotation equals
+l
+m L
+m
+m
+p
+c
+p
+=
++
+05
+.
+(from 2.8)
+(2.11)
+2.1 THE SYSTEM MODEL IN SIMULINK
+The simulation model of the real pendulum-cart system (model.m in Simulink) is
+presented in Figure 2-5, Figure 2-6 and Figure 2-7.
+PENDULUM-CART SYSTEM
+pi
+Pendulum velocity
+Pendulum angle
+Dynamics
+m
+Cart velocity
+Cart Position
+1
+In
+Figure 2-5: Pendulum-cart model model.m
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-12
+33-005-4M5
+DYNAMICS
+of
+PENDULUM-CART SYSTEM
+1 x1,x2,x3,x4
+l*cos(u(2))* (-mi*u(4)*u(4)*sin(u(2))) + mi*g*sin(u(2))-fp*u(4)
+a*(-mi*u(4)*u(4)*sin(u(2)) )+l*cos(u(2))*(mi*g*sin(u(2))-fp*u(4))
+0
+0
+0
+Mux
+Mux
+l*cos(u(2))
+Saturation
+NOR
+M
+-1
+a
+Friction
+Demux
+DZ-Vp
+DZ-Vc
+DZ-U
+1/s
+4
+1/s
+3
+1/s
+2
+1/(J+mi*l*sin(u[2])*sin(u[2]))
+1/s
+1
+1
+u
+x2
+x1
+x3
+x4
+x’4
+x’3
+Figure 2-6: Dynamics block
+Friction vs. cart velocity
+1
+out_1
+Saturation
+>=
+>=
+f(u)
+ParabUp
+f(u)
+ParabDn
+Xc
+Min-Cv
+((Yc-FC)/Xc)*u(1)+FC
+LinUp
+((Yc-FC)/Xc)*u(1)-FC
+LinDn
+-1
+FS/small
+-1
+-1
+DetectZero
+|u|
+-Xc
+-Min-Cv
+1
+in_1
+Figure 2-7: Friction block
+Input Parameters
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+MODELLING AND CONTROL PROBLEMS
+33-005-4M5
+2-13
+The cart-pendulum dynamics (equations from (2.1) to (2.5)) are modelled in the masked
+block Dynamics. The unmasked block Dynamics  is given in Figure 2-6. It contains
+several specialised blocks from the SIMULINK library such as Dead zone and Saturation,
+and the Friction block dedicated  to friction representation.
+Friction is the most important block for the identification procedure. The interior of this
+block is shown in Figure 2-7. Omitting or simplifying the Friction block results in poor
+compatibility between the real and simulation models responses. Two memory blocks are
+introduced to avoid the generation of algebraic loops. There are three Dead zone blocks
+to make the model sensitive to small values of  velocities and control.
+The default simulation parameters are given in Figure 2-8 and Figure 2-9.
+Notice, that the fifth order Runge Kutta integration method with the constant step 0.01 [s]
+is used.
+Figure 2-8: Parameters of simulation - Solver
+CHAPTER 2
+DIGITAL PENDULUM SYSTEM
+MODELLING AND CONTROL PROBLEMS
+TEACHING MANUAL 1
+2-14
+33-005-4M5
+Figure 2-9: Parameters of simulation - Workspace I/O
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-1
+3 IDENTIFICATION.
+To start identification call p_id  file in the MATLAB Command Window. The main window
+of the identification process is shown in Figure 3-1.
+Figure 3-1: Pendulum identification - Main window
+To get important information about the identification process click on the Help ... button.
+To close the identification main window click on the EXIT button.
+3.1 START OF THE IDENTIFICATION EXPERIMENT.
+Bring the cart to the centre of the rail. No motion of cart and pendulum should be
+observed! If you had used the pendulum before you started p_id.m  file, double click on
+the Stop practical followed by a double click on the Reset encoders 1 button from
+TOOLS section.
+                                           
+1See the Getting Started Manual 33-005-1
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-2
+33-005-4M5
+The pendulum-cart parameters are loaded automatically whed p_id.m is started. You can
+edit all constant parameters by clicking the Edit parameters button in the
+IDENTIFICATION section. The parameters of the pendulum are loaded from the
+pendpar.mat file and displayed in the window (Figure 3-3). When the file does not exist in
+the Feedback Pendulum Identification Toolbox directory the error message is displayed
+(Figure 3-2). If the pendpar.mat file is absent in your directory it will be created after
+accepting model parameters.
+Figure 3-2: Parameters file open error
+Next you will be asked to accept the parameters, or to change them by editing in the
+parameters window (Figure 3-3). When you edit one of the parameters click OK to store
+the to the pendpar.mat file. Click Cancel button to start the identification procedure.
+Each parameter contains date and time, to let you better recognise the identification time.
+Figure 3-3: Model parameters measured and set by Feedback Ltd.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-3
+3.2 IDENTIFICATION OF THE PENDULUM FRICTION.
+Matlab program p_idpf.m
+Block the cart at an arbitrary point of the rail using the special stoppers supplied and
+which are shown in Figure 3-4.
+Figure 3-4: Blocking stoppers
+The cart is mechanically blocked. Click on the Pendulum friction button placed in the
+IDENTIFICATION section of the main identification window. The identification procedure
+guides you step by step to perform the experiment.
+First raise the pendulum to π ±π /9 (20 degrees up from the stable down position). If you
+click on the Check Angle button in Figure 3-5, you can see the current value of the
+pendulum angle (assuming that you hold the pendulum in the raised position).
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-4
+33-005-4M5
+Figure 3-5: Angle checking window
+Click the START button to continue identification of the pendulum angle. The following
+window appears on the screen (Figure 3-6).
+Figure 3-6: Start of the algorithm
+You are informed that data acquisition is in progress. The algorithm starts using the
+default model parameters. The algorithm measures the angle for a defined time period in
+order to calculate the friction of the pendulum, based on an exponential decay. The
+pendulum is oscillating and data are being gathered which will be used to calculate friction
+coefficients. The following window containing progress bar will appear on the screen
+(Figure 3-7).
+Figure 3-7: Identification in progress
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-5
+At least eight oscillations are required to start the data acquisition in the algorithm. If the
+pendulum does not move (oscillations are not observed),  the identification process
+breaks and you see the message in Figure 3-8, and you will have to start this step again.
+Figure 3-8: Oscillations not observed
+The algorithm divides its operation time between data acquisition and calculations. The
+following actions are performed:
+-calculation of the mean value of the pendulum period T, (i.e. the time between
+two peaks)
+-calculation of the pendulum friction (damping) coefficient,
+Figure 3-9: Damped oscillations of the pendulum.
+0
+5 0
+1 0 0
+1 5 0
+2 0 0
+2 5 0
+3
+3 . 0 5
+3 . 1
+3 . 1 5
+3 . 2
+3 . 2 5
+3 . 3
+A 1
+A n
+T im e  [ s ]
+A n g le  [ r a d ]
+Exponential Decay
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-6
+33-005-4M5
+The damping coefficient is calculated on the basis of local maximum values A1, and An
+(Figure 3-9) with the following formula.
+
+
+
+
+
+
+=
+n
+p
+p
+A
+A
+nT
+J
+f
+1
+log
+where :
+fp        -    damping coefficient [kg⋅m2/s]
+Jp
+-
+moment of inertia of pendulum [kg⋅m2]
+n
+-
+number of local maximums upper the •  value,
+T
+-
+pendulum period [s], 200 seconds by default
+A An
+1,
+-
+local maximum values, after 1 oscillation and n oscillations respectively
+When the data acquisition is finished, the information appears on the screen (Figure
+3-10).
+Figure 3-10: Pendulum parameters - identification results
+The plot of the most important data is then automatically created (Figure 3-11).
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-7
+0
+20
+40
+60
+80
+100
+120
+3
+3.2
+3.4
+Pendulum angle
+Time [s]
+Angle [rad]
+102
+103
+104
+105
+106
+107
+108
+109
+110
+3.338
+3.34
+3.342
+3.344
+3.346
+Time [s]
+Angle [rad]
+0
+0.5
+1
+1.5
+2
+3
+3.2
+3.4
+Time [s]
+Angle [rad]
+Begining
+117
+118
+119
+3
+3.2
+3.4
+End
+Time [s]
+Angle [rad]
+Figure 3-11: Graphical window with pendulum data.
+At the end of pendulum identification the following message is displayed (Figure 3-12).
+Click on the Yes button to store identified parameters to pendpar.mat file.
+Figure 3-12: End of pendulum parameters identification
+3.2.1 Test of encoder quality.
+The detected amplitudes of oscillations are shown in Figure 3-11. Due to the finite
+accuracy of the measuring device (encoder), the collected local maximum values are only
+distinguished after 4 - 5 oscillations.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-8
+33-005-4M5
+This can be clearly seen  in the second plot of Figure 3-11. The angle measuring device
+has an accuracy of 2048 [bits] per 2π  [rad]. The minimum resolution is therefore:
+∆ϕ
+π
+=
+=
+2
+2048
+000306796
+.
+ [rad]
+The resolution is readable from the plot. Two plots entitled "Beginning" and "End" show
+local maxima A1, An which are required for further calculations.
+3.3 MINIMUM FORCE NEEDED TO MOVE THE CART.
+Matlab program p_idtmc.m
+This part of identification is used to detect the minimum force DZu needed to move the
+cart. To run this part of identification procedure remove blocking stoppers (Figure 3-13)
+followed by click on the Try to move the cart button in the main identification window.
+The following dialog box appears.
+Figure 3-13: Set parameters for cart movement
+Enter the force value being the initial value in each step and the number of steps (cart
+movements). To push the cart from left to right you should click on the Left to Right
+button and for the opposite direction, the Right to Left button.
+Next you will be asked about motor supply. You will se the following window (Figure 3-14).
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-9
+Figure 3-14
+If you choose the No button you must turn motor on and accept the OK button in the
+following window (Figure 3-15) and next you should answer correct the previous question.
+Figure 3-15
+The message corresponding to your choice of motion direction (see Figure 3-16 and
+Figure 3-17).
+Figure 3-16 Information for Left to Right choice
+Figure 3-17 Information for Right to Left choice
+Click the OK button to continue.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-10
+33-005-4M5
+If you see the message box (Figure 3-18) you can manually move the cart to a new
+position or the motor moves the cart.
+Figure 3-18: Positioning the cart
+Next you see Figure 3-19 and you should wait for a while until the algorithm increases the
+steering force and detects the cart position. If the position has been changed by 5
+millimetres the algorithm stops and this message window disappears.
+Figure 3-19: Trying to move the cart
+After the determined number of steps defined in the window (Figure 3-13) the procedure
+is complete and the result is displayed. Bars in Figure 3-20 represent the force required to
+move the cart at different locations on the rail.
+-0.4
+-0.2
+0
+0.2
+0.4
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+Minimal force needed to move the cart
+Cart position [m]
+Force
+Figure 3-20: Minimal force detection
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-11
+When the data acquisition is finished, the information appears on the screen(Figure 3-21).
+Figure 3-21 Try to move the cart - identification results
+At the end of pendulum identification the following message is displayed (Figure 3-22).
+Make a note of this control value as it will be used in the following experiment, or you can
+access it from the Results block in Pendulum Identification Menu. Click the Yes button to
+store identified parameters to the pendpar.mat file.
+Figure 3-22  End of Try to move the cart identification
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-12
+33-005-4M5
+3.4 CART FRICTION IDENTIFICATION.
+Matlab program p_idcf.m
+This part of identification procedure should be run if the previous step has been finished
+successfully, because the average value of the detected force is a basis for this step.
+This part of identification is used to detect :
+• static friction of the moving cart,
+• dynamic friction of the moving cart,
+• constant proportionality coefficient M between the control U : 
+[
+]
+U ∈−11,
+produced by the computer interface and the control force F: 
+[
+]
+F
+M M
+∈−
+,
+,
+The equation of force equilibrium has the form:
+(
+)
+F
+f V
+a t
+MU
+m a
+sf
+c
+c
++
++
+=
+−
+−
+0
+∆
+where:
+F=MU
+Average value of the detected force from previous experiment [N]
+Fsf
+- static friction force of moving cart [kg/s]
+fc
+- dynamic friction coefficient [kg/s]
+FC=0.1⋅fc - dynamic friction coefficienr/10 [N]
+Vo
+- cart velocity in early stage of motion [m/s]
+a
+- acceleration of cart [m/s2]
+∆t
+- time interval when steering force F is active [s]
+M
+- proportionality coefficient (magnitude of control) [N]
+U
+- control
+mc-
+- cart mass without pendulum poles and weights [kg]
+The experiment concerns only the cart. Unscrew the arms of pendulum. Leave only the
+pendulum axis together with the cart. Again the block stoppers are not used. Check the
+horizontal position of the rail. The edges of the rail having contact with the cart wheels
+must be clean and  free from dust. Be sure that previous practicals are stopped and
+switch on the DC motor power. Click on the Cart friction button in the main identification
+window to start identification.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-13
+Next you will see the following dialog box.
+Figure 3-23: Check minimal force
+Notice that the minimal control value is calculated in the experiment “Try to move the
+cart”.
+0
+Control
+1
+Time
+Control = Fmin + delta * step
+step = {0, 1, 2}
+impulse
+time
+The algorithm contains 3 steps. In 2nd and 3rd steps the control value increase.
+To change the values, type a new value in the edit window(Figure 3-23). Click on the OK
+button. Next you will be asked about motor supply. You will se the following window.
+Figure 3-24
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-14
+33-005-4M5
+If you choose the No button you must turn motor on and accept the OK button in the
+following window (Figure 3-25) and you should execute the instruction.
+Figure 3-25
+Next you will se the following window:
+Figure 3-26:Prepare cart position
+You must move the cart by hand to the left end of the rail (not overpassing the limit
+switch). Click on the OK button to continue. You see the information in Figure 3-27.
+This part of identification consists of three identical experiments. In each of them the
+steering force is being monotonically increased and the cart motion data are collected.
+You take part interactively in these experiments by dragging the cart by hand to its initial
+position and accepting the message (Figure 3-26). During each experiment the following
+window appears (Figure 3-27).
+Figure 3-27: Detection of the cart friction in progress
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-15
+During the identification procedure the following errors can occur:
+when  more than one cart motion is observed, or
+when the minimal control value is to small to move the cart.
+At the end of these experiments the plot of  the cart position is created (Figure 3-28)
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+-0.42
+-0.4
+-0.38
+-0.36
+-0.34
+-0.32
+Cart position
+Time [s]
+Position [m]
+Force OFF
+Force ON
+0
+0.2
+0.4
+0.6
+0.8
+-0.4
+-0.35
+-0.3
+-0.25
+-0.2
+-0.15
+Cart position
+Time [s]
+Position [m]
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-16
+33-005-4M5
+0
+0.2
+0.4
+0.6
+0.8
+1
+1.2
+-0.4
+-0.2
+0
+0.2
+Cart position
+Time [s]
+Position [m]
+Figure 3-28: Plot containing cart movement data.
+Each figure illustrates the cart motion for an increasing control force. The plot represents
+the cart position for the force ON (thick line) and OFF (thin line). Finally you are informed
+that the cart friction identification is finished (Figure 3-29).
+Figure 3-29: Cart friction - identification results
+Figure 3-30 End of cart friction identification
+3.5 DEAD ZONES IDENTIFICATION DZCV, DZPV
+Matlab program p_iddz.m
+This step of the identification procedure detects the minimum value of cart velocity such
+that below it the cart movement is not observed, and the minimum value of the pendulum
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-17
+angular velocity such that below it the influence of the pendulum on the cart movement is
+not observed.
+Before you run this test you should switch off the DC motor power and take off the cart
+blocks if the previous step was the identification of pendulum friction or to add the
+pendulum arms on the cart if the previous experiment was cart friction identification. To
+run this part of the identification click on the Dead zone experiment button in the main
+identification window. To start the algorithm you must accept the following information
+(Figure 3-31).
+Figure 3-31: Algorithm starts
+Next you should place the cart in the centre of the rail and accept the following message
+(Figure 3-32).
+Figure 3-32: Placing the cart in the centre
+After that you must raise the pendulum to a horizontal position (angle ± π/2) and release it
+at the same time when you accept the following message box (Figure 3-33).
+Figure 3-33: Setting pendulum angle
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-18
+33-005-4M5
+If the value of pendulum angle deviation is to small, hence no motion of the cart , you see
+the error message (Figure 3-344) and you should repeat this step and raise the pendulum
+higher.
+Figure 3-34: Cart not in motion
+During collecting data you will be informed about it by the following progress bar window:
+Figure 3-35 Dead zone experiment in progress
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-19
+11.4
+11.6
+11.8
+12
+12.2
+12.4
+12.6
+12.8
+13
+-0.01
+-0.005
+0
+0.005
+0.01
+Cart velocity
+Time [sec]
+[m/s]
+11.4
+11.6
+11.8
+12
+12.2
+12.4
+12.6
+12.8
+13
+-10
+-5
+0
+5
+10
+Pendulum velocity
+Time [sec]
+[rad/s]
+Figure 3-36: Dead zones of cart and pendulum velocities
+DZcv and DZpv are the minimum values of cart and pendulum velocities responses.
+Output of dead zones identification experiment is shown in Figure 3-36 and Figure 3-37.
+Figure 3-37 Dead zone experiment results
+Figure 3-38 End of Dead zone experiment
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-20
+33-005-4M5
+3.6 IMPULSE EXCITATION
+Matlab program p_idie.m
+This step of identification shows the pendulum-cart system response due to a short
+impulse. This step should be performed with the pendulum on the cart. Before you run
+this step you should click on the Stop practical button in the main identification window
+and next switch on the DC motor power.
+To run this part of the identification procedure click on the Impulse excitation button in
+the main identification window. The cart can be positioned at an arbitrary place on the rail,
+but the pendulum should be in the down position and no motion of it should be observed.
+The following dialogue box appears (Figure 3-39)
+Figure 3-39: Set impulse parameters
+In this dialog box you can define the time and amplitude of the control impulse. The
+amplitude value must be from the range [ |Umin| , | 1 | ], where Umin is the minimum value
+of control needed to move the cart. The time should be less than 1 second. As default
+parameters the procedure sets : value = 0.2 and time = 0.1;
+Next you will be asked about motor supply. You will se the following window (Figure 3-40)
+Figure 3-40
+If you choose the No button you must turn motor on and accept the OK button in the
+following window (Figure 3-41) and you should execute the following instruction.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-21
+Figure 3-41
+You will se the following window with progress bar:
+Figure 3-42
+Figure 3-42 shows the results of impulse excitation for amplitude 0.2 and time 0.3 second.
+0.4
+0.5
+0.6
+0.7
+0.8
+0.9
+0
+0.05
+0.1
+0.15
+Cart position
+[m]
+0.5
+1
+1.5
+2
+2.8
+3
+3.4
+Pendulum angle
+0.4
+0.5
+0.6
+0.7
+0.8
+0.9
+0
+0.5
+1
+Control
+Time [sec]
+[N]
+[rad]
+3.2
+Figure 3-42: Impulse excitation results
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-22
+33-005-4M5
+Figure 3-43 End of impulse excitation experiment
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-23
+3.7 RESULTS OF PENDULUM IDENTIFICATION PROCESS.
+Click on the RESULTS button in the main identification window to see all pendulum
+parameters (Figure 3-44). You will be asked about saving all pendulum parameters to
+MATLAB pendpar.m file, which you can call from MATLAB Workspace to load all
+parameters automatically.
+ 
+Figure 3-44: Export all parameters
+If you click on the YES button, all pendulum parameters will be saved in to the pendpar.m.
+file. Figure 3-45 shows some actual results from the identification experiments.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-24
+33-005-4M5
+Figure 3-45 All system parameters
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-25
+Summary of all parameters
+Name
+Description
+Unit
+mc
+cart mass
+[kg]
+mc-
+cart mass without positioners for pendulum
+[kg]
+mps
+pole mass
+[kg]
+mpw
+load mass
+[kg]
+Rl
+rail length
+[m]
+lp
+length of pole
+[m]
+lpo
+distance between centre of pole mass and rotation
+axis
+[m]
+lc
+length of load
+[m]
+lco
+distance between centre of load mass and rotation
+axis
+[m]
+rc
+radius of the load
+[m]
+rp
+radius of the stick
+[m]
+Jpt
+Theoretic pendulum moment of inertia
+[kg⋅m2]
+FS
+cart static friction
+[N]
+FC
+cart dynamic friction coefficient
+[kg/s]
+M
+maximal force
+[N]
+DZu
+minimal force to move a cart
+[N]
+DZcv
+dead zone of cart velocity
+[m/s]
+DZpv
+dead zone of pendulum velocity
+[rad/s]
+fp
+pendulum friction constant
+[kg⋅m2/s]
+T
+pendulum period
+[s]
+Jp
+moment of inertia related to the axis of rotation
+[kg⋅m2]
+J
+moment of inertia related to the mass centre
+[kg⋅m2]
+l
+distance between axis of pendulum rotation and the
+centre of pendulum-cart mass
+[m]
+Table 1 Names of all parameters
+All parameters of the pendulum-cart system are listed in Table 1. If you call the file
+pendpar.m from MATLAB command window than all variables will be loaded to
+workspace.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-26
+33-005-4M5
+3.8 IDENTIFIED PARAMETERS.
+Examples of parameter values, which were measured and identified during an
+experiment, are grouped in Table 2.
+Parameter
+name
+Value
+Unit
+mc
+1.120
+[kg]
+mc-
+1.045
+[kg]
+mps
+0.025
+[kg]
+mpw
+0.095
+[kg]
+Rl
+1.000
+[m]
+lp
+0.402
+[m]
+lpo
+0.146
+[m]
+lc
+0.041
+[m]
+lco
+0.347
+[m]
+rc
+0.02
+[m]
+rp
+0.006
+[m]
+Jpt
+0.0136
+[kg⋅m2]
+FS
+3.0
+[N]
+FC
+2.0
+[kg/s]
+M
+15.500
+[N]
+DZu
+1.0
+[N]
+DZcv
+0.080
+[m/s]
+DZpv
+6.800
+[rad/s]
+fp
+2.1e-5
+[kg⋅m2/s]
+T
+1.160
+[s]
+Jp
+0.013922
+[kg⋅m2]
+J
+0.0135966
+[kg⋅m2]
+l
+0.0167066
+[m]
+Table 2 Values of all parameters
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-27
+3.9  VERIFICATION AND TUNING.
+There is a group of  parameters such as mc, mc-, mp, Rl and L. which are measured. There
+are also parameters which are calculated on the basis of experiments  and
+measurements such as J, l. Other parameters of the system may only be identified by
+experiments.
+Some of these parameters can be successfully identified such as FS, Dzcv, Dzpv, fp and
+T. For example, the pendulum period T may be  obtained with great accuracy, whereas
+the dynamic or Coulomb friction FC, the dead zone of control DZu and the control
+magnitude M are poorly identified. Due to the random character of these parameters we
+can only assume the average values of detected parameters in a number of experiments.
+In this situation we have to verify the results obtained with the use of other independent
+identification experiments. These experiments are performed both on the simulation
+model and real system configured in the same way.
+The architecture of the simulated and real experiments is shown in Figure 3-. The
+following experiments are performed:
+• impulse excitation
+• closed-loop proportional control with a square wave excitation.
+We can apply the pulse generator (Figure 3-47) or the simple proportional controller as
+shown in Figure 3-48 (use only the proportional cart controller).
+The  parameters of the simulation model are set as they have been detected previously.
+The values of poorly identified parameters: FS, FC, M  are treated as the starting point in
+experiments to optimise and find the best  parameter values.
+A performance index of the optimisation procedure is calculated as the squared difference
+of the real and simulation transient responses.
+Signal
+Generator
+Simulation
+model
+Real
+system
+optimization
+-
+error
+FS,FC,M
+Figure 3-46: Tuning of parameters
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-28
+33-005-4M5
+One can modify the friction function by tuning the parameters defined in the friction mask:
+FS, FC, Xc, Yc. The results of tuning performed in the simulation model  - file
+model_ie.m shown in (Figure 3-47)  are verified with the results taken from the real
+system. The simulated system responses are given in Figure 3-48 and Figure 3-49.
+The real data is obtained after clicking on the Impulse excitation button in the main
+pendulum identification window. See Figure 3-42. Note the similarity of the depicted cart
+position time diagrams in both systems.
+PENDULUM-CART
+Impulse excitation
+pi
+Mux
+Pulse
+Generator
+Pendulum velocity
+Pendulum angle
+Dynamics
+Des. and Cart Pos
+Demux
+Cart velocity
+Cart Position
+Figure 3-47: Pulse generator model_ie.m
+0.9
+1
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+0
+0.02
+0.04
+0.06
+0.08
+0.1
+0.12
+0.14
+Time [s]
+Cart position [m], Pulse excitation 5.5 [N]
+Figure 3-48: Simulated Cart position
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-29
+0.8
+1
+1.2
+1.4
+1.6
+1.8
+2
+2.2
+2.7
+2.8
+2.9
+3
+3.1
+3.2
+3.3
+3.4
+3.5
+3.6
+Time [s]
+Pendulum angle [rad],Pulse excitation 5.5 [N]
+Figure 3-49: Simulated Pendulum angle
+In the above case the tuning is done by trial-error method, comparing the real with
+simulation impulse excitation response.
+The second experiment is concerned with a proportional cart controller and a square
+wave excitation. The results of tuning the simulation model shown in Figure 3-50 are
+verified with the results taken from the real system presented in Figure 3-51.
+Figure 3-51: Crane mode Proportional cart controller, real system response
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-30
+33-005-4M5
+To use proportional cart control, access Crane PID Control block in the main control
+window. The following parameters were set:  Proportional cart controller with  Kp gain
+equal to 2(all other PID control parameters set to zero), square wave of frequency equal
+to 0.2 [rad/s] and peak equal to 0.17, the magnitude of the control is bounded at |0.8|.
+Notice the similarity of the depicted cart position time diagrams in both systems. The
+modified parameters obtained in the way described above are shown in Table 3 and are
+used in the remainder of the manual..
+A comparison of experimental data given in Table 2 and the simulated model data in
+Table 3, shows that the tuning of the poorly identified parameters is necessary.
+The simulation model for Proportional cart control only can by accessed by typing
+modelpid at the Matlab prompt.
+The identified simulation model (Figure 3-50) will be used in the next sections as the
+model for the PID control. Finally let us note that the identification of the pendulum-cart
+system can be performed also in a different way including more statistical data processed
+by the least squares or other statistical method. In this case a greater number of
+experiments would be required.
+Figure 3-50: Crane mode Proportional cart controller, Simulink model response
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-31
+ Name
+Value
+Unit
+mc
+1.120
+[kg]
+mc-
+1.045
+[kg]
+mpw
+0.095
+[kg]
+mps
+0.025
+[kg]
+Rl
+1.000
+[m]
+lp
+0.402
+[m]
+lpo
+0.146
+[m]
+lc
+0.041
+[m]
+lco
+0.347
+[m]
+FS
+3.2
+[N]
+FC
+2.3
+[kg/s]
+M
+11.300
+[N]
+DZu
+1.5
+[N]
+DZcv
+0.080
+[m/s]
+DZpv
+6.800
+[rad/s]
+fp
+2.1e-5
+[kg⋅m2/s]
+T
+1.160
+[s]
+Jp
+0.012322
+[kg⋅m2]
+J
+0.011966
+[kg⋅m2]
+l
+0.017066
+[m]
+Table 3 Values of all measured and identified parameters
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-32
+33-005-4M5
+3.10  OPTIMISATION OF JP AND FP
+To start optimisation of two parameters of the pendulum model, Jp and fp, ( the pendulum
+moment of inertia and the friction of the pendulum) click on the Jp & fp Optimisation
+button in pendulum identification menu. The window in Figure 3-51 appears. The relations
+between: a, b, Jp ang fp parameters are shown by the formulae given below:
+a
+mgr
+J p
+=
+and b
+f
+J
+p
+p
+=
+or
+J
+mgr
+a
+p =
+and f
+J
+b
+p
+p
+=
+⋅
+The cost function is given by the formula:
+(
+) (
+)
+Q
+y
+y
+y
+y
+m
+m
+=
+−
+−
+,
+where:
+y
+- vector approximating the trajectory of pendulum angle. The exact relation
+between angle and time is given by the equation 
+( )
+
+sin
+
+y
+t
+y
+t
+y
+=
+⋅
+−
+⋅
+1
+2
+, wheret
+t
+2
+1
+,  are
+successive time moments and t
+t
+t
+2
+1
+=
++ ∆, ( ∆t  is the time step),
+ym
+- vector of measured trajectory of pendulum angle,
+Figure 3-51: Optimisation starting values
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-33
+Define a number of steps. Enter “a” and “b” values according to your choice. Type the
+starting values into the “Parameter a” and “Parameter b” edit windows. Type into the
+Repetitions edit window an integer value which defines the number of calls to the internal
+optimisation procedure. During the run of the internal optimisation procedure the following
+progress bar shows the actual state of data transfer (Figure 3-52).
+Figure 3-52: Internal optimisation status
+The optimisation procedure has a long execution time. Therefore two windows appear
+and are updated at each iteration to show that the optimisation is in progress.
+The first window (Figure 3-53) shows the current status of optimisation procedure. It
+contains: Parameter a, Parameter b, Cost function, Optimisation progress (%)
+Figure 3-53: Parameters values and total optimisation status
+The second window (Figure 3-54) shows two curves:
+- current data points to be optimised and,
+- the results of optimisation.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-34
+33-005-4M5
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+0.7
+0.8
+0.9
+1
+2.8
+2.9
+3
+3.1
+3.2
+3.3
+3.4
+3.5
+Pendulum angle: red-pendulum data, blue-function
+time [s]
+Figure 3-54: Pendulum angle
+After optimisation procedure the following window appears (Figure 3-55).
+0
+2
+4
+6
+8
+10
+12
+14
+2.8
+2.9
+3
+3.1
+3.2
+3.3
+3.4
+3.5
+Pendulum angle: red-pendulum data, blue-function
+time [s]
+Figure 3-55: Optimisation results
+Before clicking on the OK button examine values of the optimised parameters. When you
+click on the OK button the status window and status bar disappear. Results are
+simultaneously displayed  in MATLAB Command window as a, b, and Q. The parameters
+a and b are identified with the least squares method. The method is applied in an iterative
+way, with the time interval Tn increasing in successive iterations. The value of Tn is
+increased by 6 oscillation periods in each of iterations 1, 2, 3, and 4. In further iterations
+the increment of Tn is equal to 15 oscillation periods. The iterations are repeated until the
+full observation time has been covered. If the Cost function value in the current step is
+greater than the previous value you see the message (Figure 3-56).
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+IDENTIFICATION
+33-005-4M5
+3-35
+Figure 3-56: Cost function overshoot
+If  the number of repetitions is too big and the optimisation procedure has no more data to
+operate on, you see the following message (Figure 3-57).
+Figure 3-57: No more data
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+IDENTIFICATION
+TEACHING MANUAL 1
+3-36
+33-005-4M5
+Notes
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-1
+4 PID CONTROLLERS.
+The PID control rule is very common in control systems. It is the basic tool for solving
+most process control problems. The PID controllers are usually standard building blocks
+for industrial automation. An industrial PID control algorithm is equipped with several
+modifications. For example, the proportional part acts only on a fraction of the desired
+value, the integral action is modified with "anti-windup" operation which stops integrating
+when the control saturates, and the derivative action is reduced at high frequencies.
+There is a number of tuning methods for PID controllers. Some of them are based on
+transient response experiments e.g., the Ziegler-Nichols step response tuning rule, other
+are based on relay feedback when the parameters of a PID controller are determined
+from features of the limit cycle of the closed-loop system, some other are based on
+frequency analysis.
+We shall consider the pendulum-cart control system containing two PID controllers. The
+first controls the angle of the pendulum. The second is used to control the position of the
+cart. The outputs of the PID controllers are added to produce the final control value for the
+D/A converter. The PID double control system of  the pendulum-cart system is shown in
+Figure 4-1.
+-
++
+-
++
++
+PIDPOSITION
+PIDANGLE
+Desired
+Angle
+"π or 0"
+Pendulum angle - α
++
+Desired
+Position
+Cart position - s
+Pendulum
+-cart
+system
+Initial values
+angle
+position
+rα
+eα
+es
+rs
+Figure 4-1: Block diagram of  PID double control system
+The double controller is described by the following equations:
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+PID CONTROLLERS
+TEACHING MANUAL 1
+4-2
+33-005-4M5
+The proportional parts:
+e
+r
+α
+α
+α
+=
+−
+,
+e
+r
+s
+s
+s
+=
+−,
+where:
+e
+es
+α ,
+ - errors of angle and position,
+r rs
+α ,  - reference values of angle and position,
+α,s  - current values of angle and position.
+CHAPTER 3
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-3
+The integrators:
+I
+t
+I
+I
+t
+I
+I
+t
+I
+I
+t
+I
+I
+I
+t
+I
+ANGLE
+ANGLE SAT
+A
+ANGLE SAT
+A
+ANGLE SAT
+A
+ANGLE SAT
+ANGLE SAT
+A
+ANGLE SAT
+( )
+( )
+( ),
+( )
+( )
+_
+_
+_
+_
+_
+_
+=
+>
+−
+≤
+≤
+−
+< −
+
+
+
+,                          
+           
+,                       
+,
+I
+t
+K
+e
+d
+A
+I
+ANGLE
+t
+( )
+( )
+_
+=
+∫
+α τ
+τ
+0
+I
+t
+I
+I
+t
+I
+I
+t
+I
+I
+t
+I
+I
+I
+t
+I
+POSITION
+POSITION
+SAT
+P
+POSITION
+SAT
+P
+POSITION
+SAT
+P
+POSITION
+SAT
+POSITION
+SAT
+P
+POSITION
+SAT
+( )
+( )
+( )
+( )
+( )
+_
+_
+_
+_
+_
+_
+=
+≤
+≤
+−
+
+
+
+,                                  
+>
+                   -
+,                                
+< -
+,
+I
+t
+K
+e
+d
+P
+I
+POSITION
+S
+t
+( )
+( )
+_
+=
+∫
+τ
+τ
+0
+where:
+K
+K
+I
+ANGLE
+I
+POSITION
+_
+_
+,
+  
+are gains of the integration parts,
+I
+I
+ANGLE SAT
+POSITION
+SAT
+_
+_
+,
+  
+are saturations of the integrators.
+The outputs from the PIDANGLE and PIDPOSITION are equal to:
+U
+t
+K
+e
+t
+I
+t
+K
+de
+t
+dt
+ANGLE
+P
+ANGLE
+ANGLE
+D ANGLE
+( )
+( )
+( )
+( )
+_
+_
+=
++
++
+α
+α
+,
+U
+t
+K
+e t
+I
+t
+K
+de t
+dt
+POSITION
+P POSITION
+s
+POSITION
+D POSITION
+s
+( )
+( )
+( )
+( )
+_
+_
+=
++
++
+,
+K
+K
+K
+K
+P
+ANGLE
+D ANGLE
+P POSITION
+D POSITION
+_
+_
+_
+_
+,
+,
+,
+are gains of the proportional and differentiation parts of the controllers, respectively.
+Finally, the control for the DC drive U(t) is given by:
+U t
+U
+U
+t
+U
+U
+t
+U
+U
+t
+U
+U
+U
+t
+U
+MAX
+AP
+MAX
+AP
+MAX
+AP
+MAX
+MAX
+AP
+MAX
+( )
+( )
+( ),
+( )
+( )
+=
+>
+≤
+≤
+−
+< −
+
+
+
+,                                 
+                -
+,                                 
+,
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+PID CONTROLLERS
+TEACHING MANUAL 1
+4-4
+33-005-4M5
+U
+t
+U
+t
+U
+t
+AP
+ANGLE
+POSITION
+( )
+( )
+=
++
+( ) 
+where:
+U MAX   is the maximum absolute value of control.
+The controller uses the error between the desired value and the actual value for the
+position of the cart and the angle of the pole. If the desired value of the angle is equal to
+zero the controller stabilises the pole in the upright position. If the desired value is equal
+to ±π  the cart-pole system works as a crane.
+Note that only these values for the pole's desired angle are admissible: 0 and ±π.
+4.1 SIMULINK MODELS FOR PID DOUBLE CONTROLLER
+There are two SIMULINK models available - one for stabilising the pole in the down
+position – the crane problem (C) and another for stabilising the pole in the upright position
+- self erecting problem (SE) (Figure 4-2).
+crane control
+(C)
+self erecting control (SE)
+Figure 4-2: Two linear control problems
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-5
+ A human or a computer may operate as a controller. A human operator may be fairly
+successful in the C problem, but completely fails in the SE  problem which requires a fast
+operating controller. It is obvious that C and SE modes require different sets of controller
+parameters. A few different parameter sets have been prepared for both control modes
+and they are available in SIMULINK models.
+The names of SIMULINK models for C and SE  modes are pd_2ddn.m and pd_2dup.m,
+respectively. These files are stored on the installation diskette.
+4.2 CRANE MODE  (2 PID for Pendulum Angle And Cart Position)
+The SIMULINK model for monitoring the real-time experiments operating in C mode is
+shown in Figure 4-3.
+Select  Simulation/Start
+to start monitoring
+(CRANE MODE)
+hist
+To Workspace
+Reduction
+of Angle
+Real Time Task
+Position
+of the cart
+Mux
+Mux
+Demux
+Control
+pi
+Constant
+Clock
+Cart's Velocity
+CART
+(pos&&des.pos)
+Parameter Tuning
+Parameter Settings
+(oscillations)
+Parameter Settings
+(aperiodical)
+Parameter Settings
+(cart only)
+Parameter Settings
+(default)
+Angular Velocity
+Angle
+Down Position
+S Function
+Pd-2dsf
+2 PID
+Figure 4-3: External interface of real system for C mode, invoked by the pd_2ddn command
+It can be run by typing  pd_2ddn in the MATLAB Command Window. The main goal of
+this model is not to simulate the pendulum-cart system but to transfer data to and from
+the Real Time Kernel. This is the main difference between this model and typical
+SIMULINK models.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-6
+33-005-4M5
+The main block of this SIMULINK model is the Real Time Task block which controls the
+data exchange between MATLAB and the real-time kernel. The Real Time Task is excited
+by the signal generator which is the source of reference position of the cart. The output of
+the Real Time Task block is a vector which contains information about the angle of the
+pendulum, position of the cart, angular velocity of the pendulum, velocity of the cart,
+reference position of the cart and control value of the DC drive. The values of the output
+vector are  shown on SIMULINK scopes and are transferred to MATLAB workspace by
+the To Workspace block. In this way  off-line calculations and other visualisations of the
+experiment results can be made.
+Table 4
+Parameter
+s Setting
+(default)
+Parameters
+Setting
+(aperiodical)
+Parameters
+Setting
+(oscillations)
+Parameters
+Setting
+(cart only)
+KpAngle
+7.0
+5.0
+6.0
+0.0
+KiAngle
+0.0
+0.0
+0.0
+0.0
+KdAngle
+0.0
+0.0
+0.0
+0.0
+KpPosition
+10.0
+10.0
+16.0
+10.0
+KiPosition
+2.8
+1.0
+2.0
+1.0
+KdPosition
+3.0
+5.0
+1.0
+5.0
+IMaxAngle
+0.8
+0.8
+0.8
+0.8
+IMaxPosition
+0.8
+0.8
+0.8
+0.8
+UMax
+0.8
+0.8
+0.8
+0.8
+TSample
+0.01
+0.01
+0.01
+0.01
+RefAngle
+pi
+pi
+pi
+pi
+RefPosition
+0.0
+0.0
+0.0
+0.0
+The blocks : Parameters Setting (default), Parameters Setting (aperiodical), Parameters
+Setting (oscillations) and Parameters Tuning are used to select different sets of controller
+parameters. Double clicking the mouse over one of the first four blocks changes the
+behaviour of the system when executing the SIMULINK model. The values of parameters
+in the sets are shown in Table 4. The Parameter Tuning  block can be used to freely
+change parameter values by using mouse controlled sliders. After double clicking  the
+window shown in Figure 4-4 opens.
+Cart
+Pend.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-7
+Figure 4-4: Tuning parameters of the pd_2ddn controller.
+Figure 4-5: Default parameters
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-8
+33-005-4M5
+Figure 4-6: Parameters Setting (oscillations)
+Figure 4-7: Parameters Setting (aperiodical)
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-9
+Figure 4-8: Parameters Setting (cart only)
+4.3 SELF ERECTING MODE
+This is activated by typing pd-2dup at the MATLAB prompt.
+The SIMULINK model for the SE mode is similar to the SIMULINK model for the C mode
+and is presented in Figure 4-9.
+Note that the controller cannot swing up the pole from every position to the upright
+position. The experiments must start with the pendulum placed in the neighbourhood of
+the upright equilibrium point. If the pendulum falls down during experiments, it must be
+raised up manually.
+The main differences between the controller for the C mode and the controller for the SE
+mode are in the sets of parameters. The parameters for SE available in the SIMULINK
+model (blocks Parameters setting (default), Parameters setting (cart pos. stabilisation)
+and Parameters setting (cart pos. neglected), are presented in Table 5.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-10
+33-005-4M5
+Select  Simulation/Start 
+to start monitoring
+(Note: the pole must be in the upright position)
+hist
+To Workspace
+Reduction 
+of Angle
+Real Time Task
+Position 
+of the cart
+Mu
+Mu
+m
+Control
+0
+Constant
+Clock
+Cart's Velocity
+CART
+(pos&&des.pos)
+Parameter Tuning
+Parameter Settings
+(cart pos. neglected)
+Parameter Settings
+(cart pos. stabilisation)
+Parameter Settings
+(default)
+Angular Velocity
+Angle
+Upright Position
+Figure 4-9: External interface of real system for SE mode, invoked by the pd_2dup command
+Table 5
+Parameters Setting
+(default)
+Parameters Setting
+(cart. pos. stabilisation)
+Parameters Setting
+(cart pos. neglected)
+KpAngle
+-40.0
+-8.0
+-8.0
+KiAngle
+0.0
+0.0
+0.0
+KdAngle
+-1.0
+-0.6
+-0.6
+KpPosition
+-10.0
+-3.0
+-0.8
+KiPosition
+0.0
+0.0
+0.0
+KdPosition
+-2.0
+-1.4
+-1.4
+IMaxAngle
+0.8
+0.8
+0.8
+IMaxPosition
+0.8
+0.8
+0.8
+UMax
+0.8
+0.8
+0.8
+TSample
+0.01
+0.01
+0.01
+RefAngle
+0.0
+0.0
+0.0
+RefPosition
+0.0
+0.0
+0.0
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-11
+The history of the experiment is transferred to the MATLAB workspace as the hist
+variable. The statements below display the history of the experiment. The parameters
+were changed during data acquisition, so you  can notice different system behaviour at
+the beginning and at the end of the experiment. The results of an experiment are
+presented below together with the MATLAB commands used for making the plots.
+plot( hist( :, 7 ), hist( :, 1 ) ); grid; title( 'Angle' ) - Figure 4-10
+0
+20
+40
+60
+80
+100
+-0.5
+0
+0.5
+1
+1.5
+2
+2.5
+3
+3.5
+Angle
+The pendulum moved
+manually to the
+upright position
+Figure 4-10
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-12
+33-005-4M5
+plot( hist( 200:900, 7 ), hist( 200:900, 1 ) ); grid; title('Angle' ) - Figure 4-11
+10
+20
+30
+40
+50
+60
+70
+80
+90
+-0.1
+-0.05
+0
+0.05
+0.1
+0.15
+Angle
+Figure 4-11
+plot( hist( :, 7 ), hist( :, 3 ), hist( :, 7 ), hist( :, 6 ) ); grid; title( 'Position and Reference
+Position' ) - Figure 4-12
+0
+20
+40
+60
+80
+100
+-0.6
+-0.5
+-0.4
+-0.3
+-0.2
+-0.1
+0
+0.1
+0.2
+Position and Reference Position
+Figure 4-12
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-13
+plot( hist( :, 7 ), hist( :, 6 ) ); grid; title( 'Control' ) - Figure 4-13
+0
+20
+40
+60
+80
+100
+-0.8
+-0.6
+-0.4
+-0.2
+0
+0.2
+0.4
+0.6
+0.8
+Control
+Figure 4-13
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-14
+33-005-4M5
+4.4 EXAMPLES OF PID CONTROLLERS, USED IN THE SIMULATION
+MODEL AND REAL SYSTEM.
+The closed-loop model with PID controllers built in SIMULINK is shown below (Figure
+4-14). It can be run by typing modelpid in MATLAB Command Window.
+pi
+pi
+Mu
+Pendulum velocity
+Pendulum angle
+PID
+PID Pendulum 
+ Controller
+PID
+PID Cart 
+Controller
+Generator
+Dynamics
+m
+Control
+Cart velocity
+Cart Pos, D.Pos
+Figure 4-14: PID controllers (modelpid.m)
+In order to get a closed representation of your real system, all the identification
+parameters calculated in the previous experiments need to be set up in the “Dynamics
+Block”.
+Before starting the simulation of the PID control use the following parameter setup values.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-15
+Figure 4-15: Simulation setting of modelpid.m
+Notice the different integration method (Ode3 - Bogacki-Shampine) for the model with PID
+controllers (Figure 4-14).
+Three examples with different PID parameters are tested in which the PID controller
+works in the default, aperiodic and oscillatory mode. The parameters are given in Table 6.
+Table 6
+PID Cart Controller
+PID Pendulum Controller
+mode
+Kp
+Ki
+Kd
+Kp
+Ki
+Kd
+default
+10
+2.8
+3
+7
+0
+0
+aperiodic
+10
+1
+5
+5
+0
+0
+oscillatory
+16
+2
+1
+6
+0
+0
+PID controller parameters for different modes
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-16
+33-005-4M5
+Obtaining the modes mentioned above?
+There are several methods, concerned with different control goals and dynamic system
+behaviour, which result in appropriate parameters setting. In this manual we only wish to
+show three different modes of operation for the closed loop system. Let us start from
+defining an aperiodic mode.
+The following procedure is recommended:
+The modelpid.m file is used. We introduce variable names instead of constant parameter
+values inside the PID  blocks. The model is additionally equipped with an NCD block
+taken from the NCD MATLAB Toolbox. This model is shown in Figure 4-16 and is called
+“modelncd.mdl”.
+Note:
+ The          symbol represents a terminator for output signals; an “outport” provides
+an output port to a subsystem or model and if a subsystem is disabled the output is
+held at its last value
+NCD Outport
+pi
+pi
+Mux
+Step
+Pendulum angle
+PID
+PID Pendulum
+ Controller
+PID
+PID Cart
+Controller
+Dynamics
+Demux
+Cart Pos, D.Pos
+Figure 4-16:  PID controllers (modelpid.m – [same as modelncd.m]) but equipped with NCD block
+Assume a PID controller for the pendulum with the following initial values:
+Kp = 6,   Ki = 0,   Kd = 0.
+Assume a PID controller for the cart with the following initial values
+Kp = 1,   Ki = 1,   Kd = 1.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-17
+Open the NCD window, assume that Kp, Ki, Kd are varying parameters, assume upper
+and lower boundaries of the system are a step response and click  the start button to
+start the optimisation sequence.
+The results are shown in Figure 4-17
+Figure 4-17: NCD optimisation results
+The following final numerical optimisation results are obtained and stored in the MATLAB
+workspace:
+PID controller for the cart  Kp = 9.8, Ki = 0.98, Kd = 5.
+PID controller for the pendulum  Kp = 5, Ki = 0, Kd = 0.
+Next, an oscillatory mode is assumed.
+Assume a PID controller for the pendulum with the following initial values:
+Kp = 6,   Ki = 0, Kd = 0.
+Assume a PID controller for the cart with the following constant values:
+Ki = 1,   Kd = 1     and Kp varying from 8-17
+The eigenvalues of the linearised closed model for Kp varying from 8 to 17, are calculated
+and plotted using the program listed below
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-18
+33-005-4M5
+lambda=[];
+Kp=7; Ki=2; Kd=1;
+for i=1:10,
+Kp=Kp+1;
+[A,B,C,D]=linmod('m_pid_2',[0 pi 0 0 0 0],0);
+lambda=[lambda eig(A)];
+ [t,x,Y]=rk45('modelpid',30);
+end
+plot(lambda,’o’);  - Figure 4-18
+-30
+-25
+-20
+-15
+-10
+-5
+0
+-8
+-6
+-4
+-2
+0
+2
+4
+6
+8
+Kp = 17
+Kp = 17
+Figure 4-18: Root loci for the linearised model
+Notice, that new complex eigenvalues appear which correspond to  Kp ≥ 14.
+We set Kp = 16 in the real time oscillatory mode experiment.
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-19
+The Simulink model of the pendulum and cart system controlled by 2 PID
+controllers
+This can be activated by typing  modelpid  in the MATLAB command window.
+The time diagrams of: the cart position signal, the pendulum angle under the control
+signal generated by the PID controllers for the simulation model are presented in Figure
+4-19, Figure 4-20 and Figure 4-21 for the default, aperiodic and oscillatory modes. The
+corresponding time diagrams for the real laboratory system are given in Figure 4-22,
+Figure 4-23 and Figure 4-24.
+Refer to Table 4 to set up controller parameters for each of the three system modes –
+default, aperiodic and oscillatory.
+Figure 4-19: Default mode for the simulation model
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-20
+33-005-4M5
+Figure 4-20: Aperiodic mode for the simulation model
+Figure 4-21: Oscillatory mode for the simulation model
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+33-005-4M5
+4-21
+Figure 4-22: Default mode for the real model
+Figure 4-23: Aperiodic mode for the real model
+CHAPTER 4
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+PID CONTROLLERS
+4-22
+33-005-4M5
+Figure 4-24: Oscillatory mode for the real model
+Good quantitative and qualitative compatibility characteristics of the simulation and real
+system responses are observed. We can formulate some general remarks related to both
+model responses.
+• The simulation model responses are characterised by smooth shapes.
+• Insignificant differences of the control time responses are visible in the steady state
+time intervals. This is due to the random character of friction.
+• It is recommended to repeat the identification procedure from time to time, with the
+inclusion of the PID or LQ controllers as it is well known that system parameters can
+vary over long periods of time.
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-1
+5 LINEAR-QUADRATIC CONTROLLERS
+The linear-quadratic problem (LQ problem) is a central one in the theory and applications
+of optimal control. There are two versions of the LQ problem: the open-loop and the
+closed-loop optimal control problems. Either the optimal control is given as an explicit
+function of time for fixed initial conditions, or the optimal controller is synthesised. Further,
+only the second case is considered. The main result of the finite-dimensional linear-
+quadratic theory is that under suitable assumptions the optimal feedback controller is
+linear with respect to the state, and constant with respect to time.
+The cart-pendulum system is a nonlinear one. It can be approximated by a linear model in
+the neighbourhood of equilibrium points. The closed-loop system with an LQ controller
+has an infinite number of periodic equilibrium points. In practice they are reduced to three
+equilibrium points: x=[−x1, π, 0, 0], x=[+x1, π, 0, 0] and  x=[0, 0, 0, 0]. The first and second
+correspond to the C (Crane) problem (see Section 4.1), and the third to the SE (Self
+Erecting) problem. LQ controller design for both problems is performed in the same way.
+5.1 LQ CONTROL PRINCIPLES
+The synthesis of the continuous LQ controller is presented below. For a very small value
+of the sampling time the response of the discrete system converges to the response of
+the corresponding continuous system. It is just our case. The most important question for
+the designer of a control system is how to select the weighting factors in the cost function.
+The linearised dynamical model of  the cart-pendulum system is described by the linear
+differential equations:
+dx
+dt
+Ax
+Bu
+=
++
+ (5.1)
+y
+x
+=
+,
+where the state matrices A and B  are obtained using  the linmod  MATLAB function (see
+the next section). The desired output time history of the state vector is assumed as
+[
+]
+yd
+yd
+yd
+yd
+yd
+=
+1
+2
+3
+4
+,
+,
+,
+. Hence, the error vector e is defined:
+e
+yd
+y
+=
+−
+(5.2)
+A typical quadratic cost function has the form:
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-2
+33-005-4M5
+J u
+e
+Qe
+u
+Ru
+d
+T
+T
+( )
+[
+( )
+( )
+( )
+( )]
+=
++
+∞
+∫
+1
+2 0
+τ
+τ
+τ
+τ
+τ
+(5.3)
+where:
+•
+Q is a nonnegative definite matrix Q
+Q
+QT
+≥0, 
+=
+,
+•
+R is a positive definite matrix R
+R
+R T
+> , 
+=
+0
+ , in our case R is a scalar,
+•
+The pair (
+)
+A B
+,
+ is controllable.
+The weighting matrices Q and R are selected by the designer but they must satisfy the
+above conditions. This is most easily accomplished by choosing Q to be diagonal with all
+diagonal elements positive or zero.
+The values of elements of matrix Q and scalar R (5.3) are weakly connected with the
+performance specification. A certain amount of trial and error is required with a simulation
+program to achieve satisfactory result. A few guidelines can be given. For example, if all
+states are to be kept under close regulation and  Q is diagonal with entries so selected
+that a fixed percentage change of each variable makes an equal contribution to the cost.
+The matrix R is also diagonal. If the maximum deviations of the system outputs are: y1max,
+y2max, y3max, y4max  and the maximum deviation of control is: umax , then the cost is:
+(
+( )
+( )
+( )
+( )
+( ))
+Q e
+t
+Q e
+t
+Q e
+t
+Q e
+t
+Ru
+t dt
+11 1
+2
+0
+22
+2
+2
+33 3
+2
+44
+4
+2
+2
++
++
++
++
+∞
+∫
+where the weighting matrices fulfil the following equations:
+Q
+y
+11
+1
+2
+1
+=
+max
+, Q
+y
+22
+2
+2
+1
+=
+max
+,
+Q
+y
+33
+3
+2
+1
+=
+max
+, Q
+y
+44
+4
+2
+1
+=
+max
+, R
+u
+=
+1
+2
+max
+(5.4)
+This rule can be modified to satisfy desired root locations and transient response for
+selected values of weights. One must avoid saturation effects both of outputs and control.
+The optimal scalar control  u*   and the optimal trajectory  vector  y* are given then by:
+u
+K yd
+y
+*
+(
+*)
+= −
+−
+ (5.5)
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-3
+where K is the feedback matrix.
+The optimal control problem is now defined as follows: find the gain K such that the
+feedback law (5.5) minimises the cost function (5.3) subject to the state equation (5.1).
+The calculation of the control variable which minimises the criterion (5.3) is a dynamic
+optimisation problem. The procedure returns the optimal feedback matrix K, and the
+matrix S, the unique positive definite solution to the associated matrix Riccati equation:
+SA
+A S
+SBR B S
+Q
+T
+T
++
+−
++
+=
+−1
+0
+(5.6)
+Because of the quadratic appearance of  S, there is more than one solution, and S must
+be positive definite to select the correct one.
+The vector K can be calculated by a numeric iterative formula on the basis of the Riccati
+equation (5.6). The associated closed-loop system:
+de
+dt
+A
+BK e
+=
+−
+(
+)
+(5.7)
+is asymptotically stable (under the controllability assumption of the pair A,B).
+To solve the LQ controller problem the lqry function can be used from the MATLAB
+Control System Toolbox. The syntax of  lqry is: [K,S,E] = lqry(A,B,C,D,Q,R).
+In this case the matrix Q weights the outputs y instead of the state x. D is the row matrix
+with four zero elements. The function lqry computes the equivalent Q, R and calls lqr, the
+other function from the same toolbox. The procedure returns also the eigenvalue vector
+E:
+E = eig (A-BK)
+The control u is not subject to constraints. Such an assumption cannot be satisfied in a
+real physical system. One must remember that if the control u is saturated during the
+practical then it does not satisfy the LQ principles. To return to the LQ problem the
+amplitude of  the  u signal should be diminished. In such a case the designer must
+increase the weight R in (5.3). It is then recommended to use the simulation tool.
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-4
+33-005-4M5
+5.2 DESIGN OF LQ CONTROLLERS (CRANE PROBLEM)
+All the crane demos presented in this section deal with the same task: i.e. move the cart
+to an arbitrary chosen position (Figure 5-1) and stabilise the pendulum in the down
+position there.
+-x1(t=0)
+x1(t=tf)
+0
+x1 - positon of cart
+u - control force
+start
+stop
+ x2 - angle of pendulum
+  LQ
+control
+centre
+Figure 5-1: LQ control for the crane problem.
+We are concerned with two equilibrium points start or stop for the C problem as shown in
+Figure 5-1. These two points can be replaced by the centre point xd=[0, π, 0, 0]. One can
+notice that the right hand sides of equations (2.1) do not include x1 variable and for an
+arbitrary cart position the same linear model is obtained. The similar remark is valid for
+the SE problem. Hence, we are concerned only with one equilibrium point e.g. xu=[0, 0, 0,
+0].
+In order to obtain the model of the crane in the form of (5.1) we have to linearise the
+pendulum dynamics model around xd and xu equilibrium points. The model introduced in
+section 2, stored in the model.m file, must be simplified to be linearised. All unnecessary
+blocks are removed. Removing these blocks simplifies the calling syntax of the linmod
+function. The reduced form of the model is given in Figure 5-2. We can use the MATLAB
+function linmod from the Control Toolbox to obtain linear models from nonlinear sets of
+ordinary differential equations (ODEs). Notice, that the model is equipped with the Inport
+block to obtain a non empty matrix B.
+We simply call the function linmod in the MATLAB Command Window:
+[Au, Bu, Cu, Du]=linmod('model4lq',[0,0,0,0],0);
+The execution of this command results in obtaining the state-space linear described in the
+S-function model4lq. The calling syntax of linmod requires the state variables and input to
+be specified. In our case they are set to zero.
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-5
+A linear model (the matrices Au, Bu, Cu, Du) is obtained at xu=[0, 0, 0, 0], u=0 operating
+point. The calculated matrices correspond to the unstable upright equilibrium point. We
+denote Au, ... for the unstable, and later As for the stable point, to distinguish sets of
+matrices for both equilibrium points.
+PENDULUM-CART SYSTEM
+4
+Outport3
+3
+Outport2
+2
+Outport1
+1
+Outport
+position
+control
+angle
+Dynamics
+m
+1
+Inport
+DYNAMICS
+of
+PENDULUM-CART SYSTEM
+1
+x1,x2,x3,x4
+f(u)
+x4'
+f(u)
+x3'
+u
+u
+l*cos(u(2))
+Saturation
+1/s
+Integrator4
+1/s
+Integrator3
+1/s
+Integrator2
+1/s
+Integrator1
+M
+a
+Friction
+Demux
+Demux
+1/(J+mi*l*sin(u[2])*sin(u[2]))
+1
+u
+Figure 5-2: The reduced model model4lq.m
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-6
+33-005-4M5
+Au   =
+0.0054
+145.7195
+43.42113
+0
+0.0001
+34.9727
+0
+0
+1.0000
+0
+0
+0
+0
+1.0000
+0
+0
+−
+−
+−
+−
+Bu   =
+[0  0    9.1803   38.2514]
+Cu   =
+1
+0
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+1
+Du   =
+[ 0
+0
+0
+0 ]
+The eigenvalues of the matrix Au can be obtained by typing in the MATLAB Command
+Window:
+Eu  =
+eig(Au)
+Eu   =
+[0    6.4216   -6.3515  -35.04820]’
+As one can expect, there is one positive value. The system is unstable in its upright
+position. The system equipped with an appropriate linear feedback will become stable.
+The same procedure can be applied to obtain a linear model at the second (down) stable
+equilibrium point. After calling:
+[As, Bs, Cs, Ds]=linmod('model4lq',[0,pi,0,0],0);
+we obtain:
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-7
+As   =
+0.0054
+145.7195
+43.4213
+0
+0.0001
+34.9727
+0.6111
+0
+1.0000
+0
+0
+0
+0
+1.0000
+0
+0
+−
+−
+−
+−
+Bs   = 
+[0   0   9.1803   -38.2514]’
+Cs   =
+1
+0
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+1
+Ds   =
+[ 0
+0
+0
+0 ]'
+Es  =
+eig(As)
+Es   =  
+[0      -0.0379 - 6.3997i    -0.0379 + 6.3997i      -34.9024]'
+The system is stable. Having two sets of linearised models we are ready to apply LQR
+controller. The SIMULINK model of the LQR controller is given in Figure 5-3.
+The next step is to assume the weighting matrices  Q and R. It can be done according to
+LQR principles. For example, we write in MATLAB Command Window:
+Q  =
+eye(size(As));
+Q(1,1)  = 50;
+Q(2,2)  = 100;
+Q(3,3)  = 1;
+Q(4,4)  = 1;
+R  =
+1;
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-8
+33-005-4M5
+[K,S,E  ]  =
+lqr(As,Bs,Q,R);
+K  = 
+[7.0711  -11.7190    2.0251   -0.2106]
+LQ controller
+position
+control
+angle
+Control
+To Workspace1
+Generator
+To Workspace
+Signal
+Generator
+u
+u
+K
+Matrix
+K
+Dynamics
+m
+pi
+0
+0
+pi
+DYNAMICS
+of
+PENDULUM-CART SYSTEM
+1
+x1,x2,x3,x4
+l*cos(u(2))* (-mi*u(4)*u(4)*sin(u(2))) + mi*g*sin(u(2))-fp*u(4)
+a*(-mi*u(4)*u(4)*sin(u(2)) )+l*cos(u(2))*(mi*g*sin(u(2))-fp*u(4))
+0
+0
+0
+u
+u
+l*cos(u(2))
+Saturation
+NOR
+M
+-1
+a
+Friction
+m
+DZ-Vp
+DZ-Vc
+DZ-U
+1/s
+4
+1/s
+3
+1/s
+2
+1/(J+mi*l*sin(u[2])*sin(u[2]))
+1/s
+1
+1
+u
+Figure 5-3: The SIMULINK model of the LQR controller model_lq.m and the interior of Dynamics block
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-9
+If we call the integration procedure ode4 from the command line we must remember to
+check first the ordering of states. Usually an ordering automatically done by SIMULINK
+differs from the ordering assumed in the model menu. Type in the MATLAB Command
+Window:
+[sizes,x0,string]  =
+model_lq
+to check the SIMULINK ordering. This command results in:
+sizes   =
+[ 4
+0
+0
+0
+0
+0
+2 ]'
+x0   =
+[ 0      3.1416
+0
+0 ]'      (0    π     0      0)
+string =
+/model_lq/Dynamics/1
+/model_lq/Dynamics/2
+/model_lq/Dynamics/4
+/model_lq/Dynamics/3
+The ordering of states is stored in the variable string. Notice, that the initial value of the
+pendulum angle must be put at first position. You can write the m-file to perform
+integration of model_lq using ode4 procedure or you can start a simulation straight from
+the SIMULINK model menu not forgetting to define the parameters.
+The calling syntax for integration invoked from the command line (m-file) is given below.
+The simulation time is set to 50 [s], the initial state vector [0 pi 0 0] relates to the
+pendulum at its down position with the cart at the centre of the rail, both velocities are
+equal to 0, the vector opt of integration parameters is defined by a simset:
+opt=simset('Solver','ode4',...
+'FixedStep',0.01,...
+   
+'OutputPoints','specified',...
+   
+'OutputVariables','x',...
+   
+'InitialState',x_ini);
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-10
+33-005-4M5
+It results in the following structure:
+Solver: 'ode4'
+            RelTol: []
+            AbsTol: []
+            Refine: []
+            MaxStep: []
+        InitialStep: []
+           MaxOrder: []
+          
+FixedStep: 0.0100
+      OutputPoints: 'specified'
+    
+OutputVariables: 'x'
+            MaxRows: []
+         
+Decimation: []
+       InitialState: [0 3.1416 0 0]
+     
+FinalStateName: []
+           Debug: []
+           Trace: []
+       SrcWorkspace: []
+       DstWorkspace: []
+          
+ZeroCross: []
+[T,X,Y]=sim('model_lq',50,opt);
+subplot(311);
+plot(T,X(:,1),'g-');
+hold on
+plot(T,Generator,'m-');
+hold off
+ylabel('[m]');
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-11
+grid;
+title('Green->Cart pos. Mag->Des. pos, Red->Pendulum angle,Blue->Control');
+subplot(312);
+plot(T,X(:,2)-pi,'r-');
+ylabel('[rad]');
+grid;
+subplot(313);
+plot(T,Control,'b-');
+ylabel('[N]');
+grid;
+xlabel('Time [s]');
+The MATLAB Graphical Window shown in Figure 5-4 is created.
+Figure 5-4: Simulation of LQ controller
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-12
+33-005-4M5
+5.3 LQ CONTROL EXPERIMENTS.
+LQ control experiments can be performed in two ways :
+1.
+From the pendulum main menu window by invoking Crane LQ Controller demo.
+2.
+From MATLAB Command Window by invoking the pd_2ddn.m file.
+The first method (pendulum.m).
+After clicking on the Crane LQ Controller block the following window opens (Figure 5-5).
+The Desired Position Generator is set to generate a square wave signal.
+Start real experiment from Simulation –Start top bar menu. While this is controlling using
+default parameters , return to main control menu and select Parameters of the Controller
+block. Here you can apply the calculated vector K for the real laboratory system. Click on
+Set button in order to acknowledge all changes to RTK. Return to pd_lqr file and see the
+changes to the system by opening the scope blocks.
+LQ crane controller
+Select  Simulation/Start 
+to start monitoring
+pd_hist
+To Workspace
+Reduction 
+of Angle
+Real Time Task
+PendVelocity
+PendPos
+u
+u
+Desired Position
+Generator
+m
+Control
+pi
+CartVelocity
+CART
+Pos. & Des.Pos.
+INFO
+Figure 5-5: LQ crane controller
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-13
+Figure 5-6: Tuning of K
+Figure 5-7: Responses of the laboratory model for the first experiment
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-14
+33-005-4M5
+The results of this experiment are given in Figure 5-7. If saturation of the control signal is
+observed, which can take part in the short time intervals when an abrupt change of
+desired position occurs, then the controller does not follow the LQ optimal algorithm.
+Similar experiments can be performed for the upright stabilisation of the pendulum. In this
+case we must use the feedback vector K calculated for the Au Bu Cu Du matrices of the
+unstable linearised model.
+The second method (pd_2ddn.m)
+The following steps are sequentially called by the lqpnew.m file: linearisation, order
+checking, LQR problem solving and simulation of the closed-loop system with the
+calculated LQ controller feedback. The model4lq.m is linearised at [0 pi 0 0] equilibrium
+point by the linmod procedure. It results in the As Bs Cs Ds matrices of the linearised
+system (not displayed in the MATLAB Command Window). The new file model_j.m is
+introduced (Figure 5-8).
+LQ controler
+position
+control
+angle
+Qfact
+To Workspace2
+Control
+To Workspace1
+Generator
+To Workspace
+Signal
+Generator
+Quality factor
+u
+u
+Mux
+u
+K
+Matrix
+Q
+K
+Matrix
+K
+s
+1
+R
+Dynamics
+m
+m
+pi
+0
+0
+pi
+Figure 5-8: The SIMULINK model of the LQR controller model_j.m
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-15
+Next, Q and R weighting matrices are defined. Remember that the default values of Q
+and R are defined in the lqpnew.m file. Put values of your own choice into the lqpnew.m
+file! The feedback vector K is calculated by the lqr procedure. The ode4 procedure
+integrates the model_j.m SIMULINK model. The lqpnew.m procedure is paused two times
+to allow checking if the initial state ordering in ode4 calling syntax and in model_j.m
+correspond to each other. It is important to know the structure and ordering of blocks
+generated automatically by SIMULINK. If the model is called from a command line the
+ordering of states is essential for a proper integration.
+Remember, the linmod procedure from the CONTROL Toolbox calls the model from a
+command line. In this case the model cannot be called from the menu!
+The model_j.m S-function is enlarged with one state to calculate the performance index.
+Following these remarks we open the lqpnew.m file and define Q and R:
+Q  =
+[50  0  0  0;    0  100  0  0;    0  0  0  0;    0  0  0  0];
+R  =
+1;
+This modification of the lqpnew.m file is necessary if you like to have the Q and R
+matrices of your choice. Now we are ready to call the lqpnew.m file which automatically
+executes all mentioned above functions. In MATLAB Command Window we simple write:
+lqpnew
+The numerical and graphical results are displayed one by one in MATLAB Command and
+Graphical windows.
+We obtain in MATLAB Command Window:
+sizes   =
+ [4  0  4  1  0  1  2]
+x0   = 
+[0   3.1416   0   0]
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-16
+33-005-4M5
+string   =
+    'model4lq/Dynamics/Integrator1'
+    'model4lq/Dynamics/Integrator2'
+    'model4lq/Dynamics/Integrator3'
+    'model4lq/Dynamics/Integrator4'
+Check sequence of states !
+SIZES(1) number of continuous states
+ 
+SIZES(2) number of discrete states.
+SIZES(3) number of outputs
+SIZES(4) number of inputs
+ 
+SIZES(5) number of roots that the system has.
+ 
+SIZES(6) set to 1 if the system has direct feed-through of its inputs
+(used for systems within systems).
+         
+SIZES(7) number of sampling periods
+eig(AS)  =  [ 0          -0.0379 + 6.3997i       -0.0379 - 6.3997i         -34.9024 ]
+Q   =
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+100
+0
+0
+0
+0
+50
+Sizes   = [5  0  0  0  0  0  2]’
+x0   = 
+[0   3.1416   0   0]’
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-17
+string =
+    'model_j/Dynamics/1'
+    'model_j/Dynamics/2'
+    'model_j/Dynamics/4'
+    'model_j/Dynamics/3'
+    'model_j/Integrator'
+Check sequence of states in "model_j" !
+Matrix K =[  7.0711   -9.8961    1.7055    0.1227 ]
+This is the end of information displayed in MATLAB Command Window. Similarly, we
+obtain the following figure in MATLAB Graphical Window (Figure 5-9).
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-0.5
+0
+0.5
+[m]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-0.2
+0
+0.2
+[rad]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-5
+0
+5
+[N]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+0
+20
+40
+Quality factor
+Time [s]
+Pos. and Des. Pos
+Quality factor
+Control
+Pendulum Angle
+Figure 5-9: Simulation of LQ control
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-18
+33-005-4M5
+This is the end of information displayed in MATLAB Graphical Window.
+We are ready for real system  LQ experiments. The matrix K is applied in the menu of the
+pd_2ddn.m file.
+To introduce the above optimal parameters in real control, after Simulation-Star
+command, open block called Parameter Tuning situated on the right-hand corner of this
+pd_2ddn file. We use the PID controller template for the LQ controller purpose. We
+assume:
+Ki coefficients are zero
+Kp Angle-Pendulum Angle relates to K(2)
+Kp Position-Cart Position relates to K(1)
+Kd-Pendulum Velocity relates to K(4)
+Kd -Cart Velocity relates to K(3)
+This ordering correspond to the {1 2 4 3} ordering of states in the model_j.m file.
+An update of parameters is shown in Figure 5-10.
+Figure 5-10: The K vector tuning
+The real system response is given in Figure 5-11. The K vector is optimal as far as the Q
+and R matrices in the quadratic performance index are concerned.
+K(2)
+0
+K(4)
+K(1)
+0
+K(3)
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-19
+Figure 5-11: LQ control experiment
+It is easy to show that the minimal value of the quadratic performance index is obtained
+for the optimal value of K. It is illustrated in Figure 5-12. Three simulations are performed
+for three different vectors K:
+K = [ 7.0711   
+-9.8961   
+1.7055    
+0.1227  ] (optimal)
+K = [ 3.0
+-9.8961   
+1.7055    
+0.1227  ]
+K = [ 12.0
+-9.8961   
+1.7055    
+0.1227  ]
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-20
+33-005-4M5
+0
+5
+10
+15
+20
+25
+30
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+Time[s]
+Cost function
+Optimal
+K(1)=7.0711
+K(1)=3
+K(1)=12
+Figure 5-12: Costs vs. time
+A next example concerns a different choice of the R weight. We introduce into the
+lqpnew.m file:
+R=10;
+After typing in MATLAB Command Window :
+lqpnew
+we obtain:
+Matrix K = [ 2.0000   -2.3394    0.1941   -0.0827]
+The following Graphical Window opens (Figure 5-13).
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-21
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-0.2
+0
+0.2
+[m]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-0.2
+0
+0.2
+[rad]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+-1
+0
+1
+[N]
+0
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+0
+20
+40
+Quality factor
+Time [s]
+Pos. and
+Des. Pos
+Pendulum angle
+Quality Factor
+Control
+Figure 5-13: LQ controller simulation
+We obtain the new vector K. It can be used again in the pd_2ddn.m file
+Figure 5-14: LQ controller practical
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-22
+33-005-4M5
+Figure 5-15: LQ controller parameters
+The data taken from the laboratory system are presented in (Figure 5-14). The LQ
+controller parameters are given in Figure 5-15.
+5.4 DISCRETE LQ CONTROLLERS
+You can formulate also a discrete LQ problem. There are tools in the MATLAB and
+CONTROL Toolbox to be applied in the discrete case. The continuous linear model can
+be transferred to the discrete model. One can use the c2d procedure. If you type in the
+MATLAB Command Window:
+[As, Bs, Cs, Ds]  =  linmod('model4lq',[0,pi,0,0],0);
+[Phi, Gamma]    =   c2d(As,Bs,0.1)
+The c2d procedure converts the continuous-time system:
+ 
+ 
+dx
+dt
+As x
+Bs u
+=
+⋅
++
+⋅
+K(2)
+0
+K(4)
+K(1)
+0
+K(3)
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+33-005-4M5
+5-23
+ into the discrete-time system:
+ 
+x n
+Phi x n
+Gamma u n
+[
+]
+[ ]
+[ ]
++
+=
+⋅
++
+⋅
+1
+assuming a zero-order hold on the inputs and sampling time 0.1[s].
+Phi   =
+7973
+.0
+5384
+.3
+0012
+.0
+0336
+.0
+3.8672
+-
+0
+0.0148
+0
+0.0931
+0.2867
+0.7978
+0
+0.00001
+0.0278
+0.0012
+1.0000
+Gamma = [ 0.0189    -0.0753     0.2537    -0.9288]
+The eigenvalues of the Phi matrix are:
+eig(Phi) = [1.0000
+0.7991 + 0.5949i   0.7991 - 0.5949i    0.0305]
+Assuming the same weighting matrices as in the continuous case:
+Q=eye(size(As));
+Q(1,1)=50;
+Q(2,2)=100;
+Q(3,3)=1;
+Q(4,4)=1;
+R=1;
+we apply the  dlqr  - linear quadratic regulator for discrete time systems:
+[K,S,E] = dlqr(Phi,Gamma,Q,R)
+K   = 
+[3.1813   -4.5895   -0.9920   -0.4047]
+E   =  
+[0.0170   0.6332 + 0.2032i    0.6332 - 0.2032i    0.8153]
+CHAPTER 5
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LINEAR QUADRATIC CONTROLLERS
+5-24
+33-005-4M5
+The SIMULINK model and responses of the discrete LQ controller is shown in Figure
+5-16.
+Figure 5-16: Discrete LQ controller model_d.m and its responses
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LIST OF DIRECTORIES AND FILES
+33-005-4M5
+6-1
+6 LIST OF DIRECTORIES AND FILES :
+The Teaching Manual I software consists off the following files. The subdirectories tree is
+shown below:
+BASIC
+       27 files
+EXTERNAL
+       PD_2DDN.M
+       PD_2DUP.M
+IDENT
+       FBLTD.MAT
+       P_PARAM.MAT
+       P_LIB.DLL
+       PENDPAR.M
+       P_ID.M
+       P_IDCF.M
+       P_IDDZ.M
+       P_IDHELP.M
+       P_IDIE.M
+       P_IDPF.M
+       P_IDTMC.M
+       P_PARAM.M
+       P_STATBAR.M
+       P_CHECKU.M
+MODEL
+       MODEL.M
+       MODEL4LQ.M
+       MODELPID.M
+       MODEL_D.M
+       MODEL_IE.M
+       MODEL_J.M
+       MODEL_LQ.M
+OPT
+        APROPA.M
+        EKSPAN.M
+        GAUSE.M
+        KOSZT.M
+        PROSTA1.M
+        RUNOPT.M
+        STBAR.M
+        ZLOPOD.M
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LIST OF DIRECTORIES AND FILES
+6-2
+33-005-4M5
+A short description of the main files is given below:
+\EXTERN
+• pd_2ddn.m - external crane PID controller (built in SIMULINK),
+• pd_2dup.m - external self-erecting PID controller (built in SIMULINK),
+ 
+ \IDENT
+• fbltd.mat - Feedback Ltd. window (mat-file)
+• pendpar.m - parameters of pendulum (m-file) (exported from p_id.m, ready to load to
+MATLAB WorkSpace,
+• p_helpf.m - help
+• p_id.m - identification procedures (m-file),
+• p_idcf.m -  identification of cart friction (static, dynamic) and detection of maximal force
+• p_iddz.m - minimal velocity value for cart and pendulum
+• p_idhelp.m - help
+• p_idie.m - short impulse response
+• p_idpf - pendulum friction and oscillation period
+• p_idtmc.m - try to move the cart on the rail
+• p_lib.dll - identification library (dll-file).
+ 
+ \MODEL
+• model.m - Pendulum-Cart model (S-file),
+• model4lq.m - reduced model.m (S-file) for linearisation,
+•  model_ie.m - model.m equipped with pulse generator (S-file) for verification and tuning
+• model_lq.m - model.m equipped with LQ controller (S-file),
+• model_j.m - model.m equipped with LQ controller and cost function (S-file),
+• lqpnew.m - sequence of commands (S-file) for: linearisation and states order checking
+(model4lq.m), LQR problem solving and simulation of the closed-loop model with LQ
+controller (model_j.m),
+• model_d.m - model.m equipped with discrete LQ controller (S-file),
+• modelpid.m - model.m equipped with PID controllers (S-file),
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LIST OF DIRECTORIES AND FILES
+33-005-4M5
+6-3
+ \OPT
+• apropa.m -parabolic approximation
+• ekspan.m - expansion procedure
+• gause.m - Gause optimisation procedure
+• koszt.m -cost function
+• prosta1.m - the line search
+• runopt.m - main optimisation procedure
+• zlopod.m - golden section procedure
+Data are saved to the following files:
+• Data related to cart friction
+pend_cf1.dat
+pend_cf2.dat
+pend_cf3.dat
+• Data related to dead zones
+pend_dz.dat
+• Data related to impulse excitation
+pend_ie.dat
+• Data related to pendulum friction
+pend_pf.dat
+(to be used in optimisation)
+• Data related to the experiment “try to move cart”
+pend_tmc.dat (cart position and force are saved).
+CHAPTER 6
+DIGITAL PENDULUM SYSTEM
+TEACHING MANUAL 1
+LIST OF DIRECTORIES AND FILES
+6-4
+33-005-4M5
+Notes

@@ -1,0 +1,66 @@
+// ============================================================================
+// TESTE DE ENCODERS — Leitura contínua em tempo real
+// Mova o carro e o pêndulo COM A MÃO e observe os valores
+// ============================================================================
+// PROCEDIMENTO:
+//   1. DESLIGUE a fonte do motor (ou desconecte) — só encoders
+//   2. Upload e abra o Monitor Serial (115200)
+//   3. Empurre o carro devagar para DIREITA e depois ESQUERDA
+//   4. Gire o pêndulo devagar
+//   5. Observe qual encoder muda em cada caso
+// ============================================================================
+
+#include <Arduino.h>
+#include <ESP32Encoder.h>
+
+// Encoders — configuração atual
+#define ENC_PEND_A 34
+#define ENC_PEND_B 35
+#define ENC_CART_A 33
+#define ENC_CART_B 32
+
+// Motor desligado — pinos como saída LOW
+#define PIN_RPWM 15
+#define PIN_LPWM 4
+#define PIN_REN  27
+#define PIN_LEN  14
+
+ESP32Encoder enc1;  // "Cart" (pinos 33/32)
+ESP32Encoder enc2;  // "Pend" (pinos 34/35)
+
+void setup() {
+    Serial.begin(115200);
+
+    // Motor totalmente desligado
+    pinMode(PIN_RPWM, OUTPUT); digitalWrite(PIN_RPWM, LOW);
+    pinMode(PIN_LPWM, OUTPUT); digitalWrite(PIN_LPWM, LOW);
+    pinMode(PIN_REN, OUTPUT);  digitalWrite(PIN_REN, LOW);
+    pinMode(PIN_LEN, OUTPUT);  digitalWrite(PIN_LEN, LOW);
+
+    // Encoders
+    ESP32Encoder::useInternalWeakPullResistors = UP;
+    enc1.attachFullQuad(ENC_CART_A, ENC_CART_B);   // pinos 33/32
+    enc2.attachFullQuad(ENC_PEND_A, ENC_PEND_B);   // pinos 34/35
+    enc1.clearCount();
+    enc2.clearCount();
+
+    Serial.println("=== TESTE DE ENCODERS (tempo real) ===");
+    Serial.println("Motor DESLIGADO. Mova carro e pendulo COM A MAO.");
+    Serial.println("");
+    Serial.println("enc1 = pinos 33/32 (deveria ser CART)");
+    Serial.println("enc2 = pinos 34/35 (deveria ser PEND)");
+    Serial.println("");
+    Serial.println("Empurre o carro -> veja qual valor muda");
+    Serial.println("Gire o pendulo  -> veja qual valor muda");
+    Serial.println("======================================\n");
+    Serial.println("enc1(33/32)  enc2(34/35)");
+    Serial.println("----------   ----------");
+}
+
+void loop() {
+    long c1 = enc1.getCount();
+    long c2 = enc2.getCount();
+    
+    Serial.printf("%8ld     %8ld\n", c1, c2);
+    delay(200);  // 5 Hz — lento o suficiente para ler
+}
