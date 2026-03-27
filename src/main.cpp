@@ -47,9 +47,9 @@ ESP32Encoder encCart;
 ESP32Encoder encPend;
 
 // ===================== Constantes de Calibração =============================
-// Trilho: ~1.0m entre fins de curso, 11508 pulsos
+// Trilho: 1.057m entre fins de curso (52.3cm esq + 53.4cm dir), 11508 pulsos
 // Pêndulo: 2050 pulsos/volta
-const float K_POS = 0.0000869f;   // pulsos → metros
+const float K_POS = 0.0000919f;   // pulsos → metros (1.057/11508)
 const float K_ANG = 0.003065f;    // pulsos → radianos
 const float Ts    = 0.005f;       // Período de amostragem [s] (5 ms, 200 Hz)
 
@@ -63,7 +63,7 @@ float MOTOR_C = 1.0f;     // Atrito de Coulomb
 const float V_SUPPLY = 12.0f;  // Tensão da fonte [V]
 
 // ===================== Limites de Segurança =================================
-const float POSICAO_LIMITE  = 0.45f;       // Limite do trilho [m]
+const float POSICAO_LIMITE  = 0.47f;       // Limite do trilho [m] (min 0.52m, margem 5cm)
 const float THETA_THRESHOLD = PI / 10.0f;  // Ângulo para transição swing→balance (~18°)
 const float MAX_PWM         = 250.0f;      // PWM máximo
 
@@ -77,7 +77,7 @@ const float MAX_PWM         = 250.0f;      // PWM máximo
 //   Kx  > 0 : carrinho na direita (x<0) → u<0 → LPWM → volta ao centro
 //   Kv  > 0 : carrinho movendo direita (v<0) → u<0 → freia
 float Kth = -50.0f;   // Ganho do ângulo (NEGATIVO)
-float Kw  = -8.0f;    // Ganho da velocidade angular (NEGATIVO)
+float Kw  = -12.0f;   // Ganho da velocidade angular (NEGATIVO)
 float Kx  = 15.0f;    // Ganho da posição do carrinho (POSITIVO: centra)
 float Kv  = 20.0f;    // Ganho da velocidade do carrinho (POSITIVO: amortece)
 
@@ -154,10 +154,24 @@ void driveMotor(float pwm_value) {
 
 // Converte controle → tensão → PWM, COMPENSANDO ATRITO DO MOTOR
 // Baseado em zjor: voltage = (control + A*v + C*sign(v)) / B
+// IMPORTANTE: compensação de Coulomb SÓ quando |v| > threshold (evita bias em v≈0)
 void driveMotorWithControl(float control, float cart_velocity) {
-    u_voltage = (control + MOTOR_A * cart_velocity + copysignf(MOTOR_C, cart_velocity)) / MOTOR_B;
+    // Compensação de atrito somente quando carrinho está em movimento
+    float friction_comp = 0;
+    if (fabsf(cart_velocity) > 0.02f) {
+        friction_comp = MOTOR_A * cart_velocity + copysignf(MOTOR_C, cart_velocity);
+    }
+    u_voltage = (control + friction_comp) / MOTOR_B;
     float pwm = MAX_PWM * u_voltage / V_SUPPLY;
-    driveMotor(saturate(pwm, MAX_PWM));
+    pwm = saturate(pwm, MAX_PWM);
+
+    // Compensação de zona morta: garante PWM mínimo para vencer atrito estático
+    const float MIN_PWM = 28.0f;
+    if (fabsf(control) > 0.1f && fabsf(pwm) < MIN_PWM) {
+        pwm = copysignf(MIN_PWM, pwm);
+    }
+
+    driveMotor(pwm);
 }
 
 // ====================== Funções de Leitura =================================
@@ -294,8 +308,8 @@ void setup() {
     Serial.println("  'T' = Diagnostico (mostra sensores ao vivo)");
     Serial.println("  'M' = Pulso motor RPWM  'N' = Pulso motor LPWM");
     Serial.println("  'A/a' = MOTOR_A +/-1   'B/b' = MOTOR_B +/-0.1");
-    Serial.println("  'D/d' = MOTOR_C +/-0.1 '1/2' = Kth +/-5");
-    Serial.println("  '3/4' = Kw +/-5   '5/6' = Kx +/-5");
+    Serial.println("  'D/d' = MOTOR_C +/-0.1 '1/2' = |Kth| +/-5");
+    Serial.println("  '3/4' = |Kw| +/-2     '5/6' = Kx +/-5");
     Serial.println("  '7/8' = Kv +/-5   '9/0' = K_SWING +/-1\n");
 
     estado_atual = STATE_IDLE;
@@ -482,10 +496,10 @@ void loop() {
                 case 'D': MOTOR_C += 0.1f; Serial.printf("MOTOR_C = %.2f\n", MOTOR_C); break;
                 case 'd': MOTOR_C = max(0.0f, MOTOR_C - 0.1f); Serial.printf("MOTOR_C = %.2f\n", MOTOR_C); break;
                 // Ajuste de ganhos LQR
-                case '1': Kth += 5.0f; Serial.printf("Kth = %.1f\n", Kth); break;
-                case '2': Kth = max(0.0f, Kth - 5.0f); Serial.printf("Kth = %.1f\n", Kth); break;
-                case '3': Kw += 5.0f; Serial.printf("Kw = %.1f\n", Kw); break;
-                case '4': Kw = max(0.0f, Kw - 5.0f); Serial.printf("Kw = %.1f\n", Kw); break;
+                case '1': Kth -= 5.0f; Serial.printf("Kth = %.1f (mais forte)\n", Kth); break;
+                case '2': Kth = min(0.0f, Kth + 5.0f); Serial.printf("Kth = %.1f (mais fraco)\n", Kth); break;
+                case '3': Kw -= 2.0f; Serial.printf("Kw = %.1f (mais forte)\n", Kw); break;
+                case '4': Kw = min(0.0f, Kw + 2.0f); Serial.printf("Kw = %.1f (mais fraco)\n", Kw); break;
                 case '5': Kx += 5.0f; Serial.printf("Kx = %.1f\n", Kx); break;
                 case '6': Kx -= 5.0f; Serial.printf("Kx = %.1f\n", Kx); break;
                 case '7': Kv += 5.0f; Serial.printf("Kv = %.1f\n", Kv); break;
